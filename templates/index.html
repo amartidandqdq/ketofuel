@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NutriPlan AI</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <aside class="sidebar">
+        <div class="logo">
+            <span class="logo-icon">N</span>
+            <div>
+                <h1>NutriPlan</h1>
+                <span class="logo-sub">AI Nutrition</span>
+            </div>
+        </div>
+        <nav>
+            <a href="#" data-tab="dashboard" class="nav-link active">
+                <span class="nav-icon">&#9632;</span> Dashboard
+            </a>
+            <a href="#" data-tab="planner" class="nav-link">
+                <span class="nav-icon">&#9733;</span> Meal Planner
+            </a>
+            <a href="#" data-tab="recipes" class="nav-link">
+                <span class="nav-icon">&#9827;</span> Recipe Finder
+            </a>
+            <a href="#" data-tab="tracker" class="nav-link">
+                <span class="nav-icon">&#9998;</span> Meal Log
+            </a>
+            <a href="#" data-tab="weight" class="nav-link">
+                <span class="nav-icon">&#8982;</span> Weight
+            </a>
+            <a href="#" data-tab="settings" class="nav-link">
+                <span class="nav-icon">&#9881;</span> Settings
+            </a>
+        </nav>
+    </aside>
+
+    <main>
+        <!-- Dashboard -->
+        <section id="dashboard" class="tab-content active">
+            <h2>Dashboard</h2>
+            <div id="dash-stats" class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-label">Calories</div>
+                    <div class="stat-value" id="stat-cal">--</div>
+                    <div class="stat-sub" id="stat-cal-target">/ -- kcal</div>
+                    <div class="progress-bar"><div class="progress-fill" id="prog-cal"></div></div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Protein</div>
+                    <div class="stat-value" id="stat-protein">--</div>
+                    <div class="stat-sub" id="stat-protein-target">/ -- g</div>
+                    <div class="progress-bar"><div class="progress-fill protein" id="prog-protein"></div></div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Fat</div>
+                    <div class="stat-value" id="stat-fat">--</div>
+                    <div class="stat-sub" id="stat-fat-target">/ -- g</div>
+                    <div class="progress-bar"><div class="progress-fill fat" id="prog-fat"></div></div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Carbs</div>
+                    <div class="stat-value" id="stat-carbs">--</div>
+                    <div class="stat-sub" id="stat-carbs-target">/ -- g</div>
+                    <div class="progress-bar"><div class="progress-fill carbs" id="prog-carbs"></div></div>
+                </div>
+            </div>
+
+            <div class="dash-row">
+                <div class="card">
+                    <h3>Quick Actions</h3>
+                    <div class="quick-actions">
+                        <button class="btn btn-primary" onclick="switchTab('planner')">Generate Meal Plan</button>
+                        <button class="btn btn-secondary" onclick="switchTab('recipes')">Find Recipes</button>
+                        <button class="btn btn-secondary" onclick="switchTab('tracker')">Log a Meal</button>
+                        <button class="btn btn-secondary" onclick="switchTab('weight')">Log Weight</button>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3>Weight Trend</h3>
+                    <div id="dash-weight-chart" class="weight-mini-chart">
+                        <p class="text-muted">No weight data yet</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>Today's Meals</h3>
+                <div id="dash-meals">
+                    <p class="text-muted">No meals logged today</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Meal Planner -->
+        <section id="planner" class="tab-content">
+            <h2>Meal Planner</h2>
+            <div class="card">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Days</label>
+                        <select id="plan-days">
+                            <option value="1">1 day</option>
+                            <option value="3">3 days</option>
+                            <option value="5">5 days</option>
+                            <option value="7">7 days</option>
+                        </select>
+                    </div>
+                    <div class="form-group flex-grow">
+                        <label>Additional preferences (optional)</label>
+                        <input type="text" id="plan-prefs" placeholder="e.g., quick meals, high protein, Mediterranean flavors...">
+                    </div>
+                </div>
+                <button class="btn btn-primary" id="btn-generate-plan" onclick="generatePlan()">Generate Meal Plan</button>
+            </div>
+            <div id="plan-results"></div>
+        </section>
+
+        <!-- Recipe Finder -->
+        <section id="recipes" class="tab-content">
+            <h2>Recipe Finder</h2>
+            <div class="card">
+                <div class="form-group">
+                    <label>Available Ingredients</label>
+                    <div class="tag-input-wrap">
+                        <div id="ingredient-tags" class="tags"></div>
+                        <input type="text" id="ingredient-input" placeholder="Type ingredient and press Enter">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Max recipes</label>
+                        <select id="recipe-count">
+                            <option value="3">3</option>
+                            <option value="5">5</option>
+                        </select>
+                    </div>
+                    <div class="form-group flex-grow">
+                        <label>Preferences (optional)</label>
+                        <input type="text" id="recipe-prefs" placeholder="e.g., quick, comfort food, Asian...">
+                    </div>
+                </div>
+                <button class="btn btn-primary" id="btn-find-recipes" onclick="findRecipes()">Find Recipes</button>
+            </div>
+            <div id="recipe-results"></div>
+        </section>
+
+        <!-- Meal Log -->
+        <section id="tracker" class="tab-content">
+            <h2>Meal Log</h2>
+            <div class="card">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Date</label>
+                        <input type="date" id="meal-date">
+                    </div>
+                    <div class="form-group flex-grow">
+                        <label>Meal Name</label>
+                        <input type="text" id="meal-name" placeholder="e.g., Lunch, Dinner, OMAD...">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Meal Description</label>
+                    <textarea id="meal-desc" rows="3" placeholder="Describe what you ate, e.g., grilled salmon with avocado salad and olive oil dressing..."></textarea>
+                </div>
+                <div class="form-row">
+                    <button class="btn btn-secondary" onclick="analyzeMeal()">AI Analyze</button>
+                    <button class="btn btn-primary" id="btn-log-meal" onclick="logMeal()">Log Meal</button>
+                </div>
+                <div id="analysis-result" class="hidden"></div>
+                <div class="form-row macro-inputs hidden" id="macro-fields">
+                    <div class="form-group">
+                        <label>Calories</label>
+                        <input type="number" id="meal-cal" placeholder="kcal">
+                    </div>
+                    <div class="form-group">
+                        <label>Protein (g)</label>
+                        <input type="number" id="meal-protein" step="0.1">
+                    </div>
+                    <div class="form-group">
+                        <label>Fat (g)</label>
+                        <input type="number" id="meal-fat" step="0.1">
+                    </div>
+                    <div class="form-group">
+                        <label>Carbs (g)</label>
+                        <input type="number" id="meal-carbs" step="0.1">
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="flex-between">
+                    <h3>Meal History</h3>
+                    <input type="date" id="history-date" onchange="loadMeals()">
+                </div>
+                <div id="meal-history">
+                    <p class="text-muted">No meals logged</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Weight Tracking -->
+        <section id="weight" class="tab-content">
+            <h2>Weight Tracking</h2>
+            <div class="card">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Date</label>
+                        <input type="date" id="weight-date">
+                    </div>
+                    <div class="form-group">
+                        <label>Weight (kg)</label>
+                        <input type="number" id="weight-value" step="0.1" placeholder="e.g., 75.5">
+                    </div>
+                    <div class="form-group flex-grow">
+                        <label>Notes (optional)</label>
+                        <input type="text" id="weight-notes" placeholder="e.g., after workout, morning...">
+                    </div>
+                </div>
+                <button class="btn btn-primary" onclick="logWeight()">Log Weight</button>
+            </div>
+
+            <div class="card">
+                <div class="flex-between">
+                    <h3>Weight History</h3>
+                    <button class="btn btn-sm btn-secondary" id="btn-weight-insight" onclick="getWeightInsight()">AI Insight</button>
+                </div>
+                <div id="weight-chart" class="weight-chart"></div>
+                <div id="weight-insight" class="hidden"></div>
+                <div id="weight-history"></div>
+            </div>
+        </section>
+
+        <!-- Settings -->
+        <section id="settings" class="tab-content">
+            <h2>Settings</h2>
+            <div class="card">
+                <h3>Profile</h3>
+                <div class="form-row">
+                    <div class="form-group flex-grow">
+                        <label>Name</label>
+                        <input type="text" id="set-name" placeholder="Your name">
+                    </div>
+                    <div class="form-group">
+                        <label>Diet Type</label>
+                        <select id="set-diet">
+                            <option value="keto_omad">Keto OMAD</option>
+                            <option value="omad">OMAD</option>
+                            <option value="keto">Keto</option>
+                            <option value="paleo">Paleo</option>
+                            <option value="mediterranean">Mediterranean</option>
+                            <option value="standard">Standard</option>
+                            <option value="custom">Custom</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Calorie Target</label>
+                        <input type="number" id="set-calories" value="2000">
+                    </div>
+                    <div class="form-group">
+                        <label>Protein %</label>
+                        <input type="number" id="set-protein" value="25" step="1">
+                    </div>
+                    <div class="form-group">
+                        <label>Fat %</label>
+                        <input type="number" id="set-fat" value="70" step="1">
+                    </div>
+                    <div class="form-group">
+                        <label>Carbs %</label>
+                        <input type="number" id="set-carbs" value="5" step="1">
+                    </div>
+                </div>
+
+                <h3>Body</h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Height (cm)</label>
+                        <input type="number" id="set-height" placeholder="175">
+                    </div>
+                    <div class="form-group">
+                        <label>Current Weight (kg)</label>
+                        <input type="number" id="set-current-weight" step="0.1" placeholder="80">
+                    </div>
+                    <div class="form-group">
+                        <label>Target Weight (kg)</label>
+                        <input type="number" id="set-target-weight" step="0.1" placeholder="72">
+                    </div>
+                </div>
+
+                <h3>Preferences</h3>
+                <div class="form-group">
+                    <label>Allergies</label>
+                    <div class="tag-input-wrap">
+                        <div id="allergy-tags" class="tags"></div>
+                        <input type="text" id="allergy-input" placeholder="Type allergy and press Enter">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Excluded Ingredients</label>
+                    <div class="tag-input-wrap">
+                        <div id="excluded-tags" class="tags"></div>
+                        <input type="text" id="excluded-input" placeholder="Type ingredient and press Enter">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Cuisine Preferences</label>
+                    <div class="tag-input-wrap">
+                        <div id="cuisine-tags" class="tags"></div>
+                        <input type="text" id="cuisine-input" placeholder="e.g., Japanese, French, Mexican...">
+                    </div>
+                </div>
+
+                <h3>API</h3>
+                <div class="form-group">
+                    <label>OpenAI API Key <span id="api-key-status"></span></label>
+                    <input type="password" id="set-api-key" placeholder="sk-...">
+                </div>
+
+                <button class="btn btn-primary" onclick="saveSettings()">Save Settings</button>
+                <span id="settings-status"></span>
+            </div>
+        </section>
+    </main>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>

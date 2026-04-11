@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "nutriplan",
+      "runtimeExecutable": "/Users/alexandre/Documents/Github/nutrition-planner/.venv/bin/python",
+      "runtimeArgs": ["main.py"],
+      "port": 8001
+    }
+  ]
+}
