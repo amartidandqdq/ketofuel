@@ -2,9 +2,22 @@
 
 # Exercise types and their ketosis impact (bonus days per session)
 EXERCISE_IMPACTS = {
-    "walk_30": {"name": "30-min Walk", "icon": "\U0001f6b6", "bonus": 0.5, "minutes": 30},
-    "fat_fast": {"name": "Fat Fast Day", "icon": "\U0001f9c8", "bonus": 2.0, "minutes": 0},
+    "walk_30": {"name": "30-min Walk", "icon": "\U0001f6b6", "bonus": 0.5, "minutes": 30, "max_daily": 3},
+    "fat_fast": {"name": "Fat Fast Day", "icon": "\U0001f9c8", "bonus": 2.0, "minutes": 0, "max_daily": 1},
     "espresso": {"name": "Black Espresso", "icon": "\u2615", "bonus": 0.15, "minutes": 0, "max_daily": 4},
+}
+
+# POURQUOI: Cap prevents gaming the system — biological adaptation has a ceiling per day
+DAILY_EXERCISE_BONUS_CAP = 2.0
+
+# Protein targets per kg of lean body mass, by activity level (for muscle preservation)
+# POURQUOI: Keto diets risk muscle loss if protein is inadequate — higher protein than standard diets
+PROTEIN_PER_KG_LEAN = {
+    1.0: 1.6,     # Sedentary
+    1.2: 1.8,     # Lightly active
+    1.375: 2.0,   # Moderately active
+    1.55: 2.2,    # Very active
+    1.725: 2.4,   # Extra active
 }
 
 _NON_KETO_DIETS = {"omad", "paleo", "mediterranean", "standard", "custom"}

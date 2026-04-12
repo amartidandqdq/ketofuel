@@ -5,7 +5,7 @@ from datetime import date, datetime, timedelta
 from fastapi import APIRouter
 
 from keto_data import (KETOSIS_TIMELINES, KETOSIS_ACCELERATORS, SPEED_TIPS,
-                       _DIET_TIMELINE_MAP, _NON_KETO_DIETS)
+                       _DIET_TIMELINE_MAP, _NON_KETO_DIETS, DAILY_EXERCISE_BONUS_CAP)
 import storage
 from storage import Storage
 
@@ -81,12 +81,12 @@ async def ketosis_state():
         else:
             break
 
-    # Exercise bonus (single file read)
+    # Exercise bonus (single file read, capped per day)
     all_daily_logs = storage._read_json("daily_logs.json", {})
     exercise_bonus = 0
     for d in dates:
-        for ex in all_daily_logs.get(d, {}).get("exercises", []):
-            exercise_bonus += ex.get("bonus_days", 0)
+        day_bonus = sum(ex.get("bonus_days", 0) for ex in all_daily_logs.get(d, {}).get("exercises", []))
+        exercise_bonus += min(day_bonus, DAILY_EXERCISE_BONUS_CAP)
     exercise_bonus = round(exercise_bonus, 1)
 
     # Phase determination (exercise reduces target, doesn't skip phases)

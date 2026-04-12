@@ -7,6 +7,7 @@ from datetime import date, datetime, timedelta
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse, StreamingResponse
 
+from keto_data import PROTEIN_PER_KG_LEAN
 from routes.tracking import _validate_date
 from storage import Storage
 
@@ -77,6 +78,48 @@ async def body_composition():
 
     return {"bmi": round(bmi, 1), "body_fat_pct": bf_pct, "fat_mass_kg": fat_mass,
             "lean_mass_kg": lean_mass, "method": "Deurenberg (BMI-based estimate)", "history": history}
+
+
+@router.get("/protein-status")
+async def protein_status():
+    """Check protein adequacy for muscle preservation based on lean mass and activity level."""
+    profile = db.get_profile()
+    weight = profile.get("current_weight_kg", 0)
+    height = profile.get("height_cm", 0)
+    age = profile.get("age", 30)
+    sex = profile.get("sex", "male")
+    activity = profile.get("activity_level", 1.375)
+
+    if not weight or not height:
+        return JSONResponse(status_code=400, content={"error": "Set height and weight in Settings."})
+
+    # Lean mass via Deurenberg (same formula as body-composition endpoint)
+    bmi = weight / ((height / 100) ** 2)
+    bf_pct = (1.20 * bmi + 0.23 * age - 5.4) if sex == "female" else (1.20 * bmi + 0.23 * age - 16.2)
+    bf_pct = max(3, min(60, bf_pct))
+    lean_mass = round(weight * (1 - bf_pct / 100), 1)
+
+    # POURQUOI: Closest activity level match — avoids requiring exact float match
+    closest_activity = min(PROTEIN_PER_KG_LEAN.keys(), key=lambda k: abs(k - activity))
+    g_per_kg = PROTEIN_PER_KG_LEAN[closest_activity]
+    protein_target_g = round(lean_mass * g_per_kg, 1)
+
+    # Today's intake
+    today = date.today().isoformat()
+    stats = db.get_daily_stats(today)
+    protein_consumed_g = round(stats.get("protein_g", 0), 1)
+    pct = round(protein_consumed_g / protein_target_g * 100) if protein_target_g > 0 else 0
+
+    alert = None
+    if stats.get("meal_count", 0) > 0 and pct < 80:
+        deficit_g = round(protein_target_g - protein_consumed_g, 1)
+        alert = f"Low protein: {protein_consumed_g}g of {protein_target_g}g target ({pct}%). You need {deficit_g}g more to preserve muscle mass."
+
+    return {
+        "lean_mass_kg": lean_mass, "g_per_kg_lean": g_per_kg,
+        "protein_target_g": protein_target_g, "protein_consumed_g": protein_consumed_g,
+        "pct": pct, "alert": alert,
+    }
 
 
 @router.get("/achievements")

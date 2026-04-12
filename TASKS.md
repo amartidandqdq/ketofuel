@@ -9,28 +9,23 @@
 
 ## 📋 A Faire
 
-### Priorite Haute
-- [ ] Tests automatises (pytest pour backend, pas de tests actuellement)
-- [ ] Preservation musculaire (proteine/kg masse maigre, alertes)
-
 ### Priorite Normale
-- [ ] app.js depasse 1800 lignes — envisager split en modules
 - [ ] Race conditions storage.py (file locking ou SQLite pour multi-user)
-- [ ] Pas de CORS middleware tests
+- [ ] Ajouter plus d'exercices au tracker (HIIT, weight training, swimming)
+- [ ] Tests frontend (end-to-end avec Playwright ou similar)
 
 ## ✅ Fait (5 dernieres)
 
-- 2026-04-12 — Code review fix: 8 issues (ExerciseLogRequest, _patch_daily_log, keto_data.py extraction, tip.format safety, offline detection)
-- 2026-04-12 — Dashboard hub layout redesign (hero section, compact grid)
-- 2026-04-12 — Exercise logger with ketosis impact + fasting bonus
-- 2026-04-12 — 6 dashboard features (donut, weekly summary, body comp, timing, achievements, snapshots)
-- 2026-04-12 — 13 improvements (CORS, pagination, export, PWA, diet-specific ketosis, toast stacking, etc.)
+- 2026-04-12 — app.js split en 10 modules ES (1887→104 lignes entry point, chaque module <320 lignes)
+- 2026-04-12 — 47 tests pytest couvrant tous les modules backend (profile, meals, tracking, weight, ketosis, dashboard)
+- 2026-04-12 — Muscle preservation: endpoint /api/protein-status + alerte frontend (protein/kg lean mass)
+- 2026-04-12 — Exercise daily cap: 2.0 bonus max/jour, walk max 3/jour, fat_fast max 1/jour
+- 2026-04-12 — Code review fix: 8 issues (ExerciseLogRequest, _patch_daily_log, keto_data.py extraction)
 
 ## ⚠️ Bloque / Attention
 
 - OpenAI API key requise pour les features IA (non-bloquant, app fonctionne sans)
-- `app.js` a 1856 lignes — approche la limite de maintenabilite
 
 ## 📝 Contexte pour Prochaine Session
 
-Le projet est fonctionnel et hardened. Deux reviews de code completees (17 + 8 fixes). Architecture: main.py (788 lignes, routes), keto_data.py (188 lignes, constantes), ai_client.py (325 lignes, prompts IA), storage.py (250 lignes, CRUD JSON). Frontend: app.js monolithique (1856 lignes). Regime actuellement configure: Carnivore avec 23h OMAD.
+Le projet est fonctionnel, teste, et modulaire. 47 tests pytest passent. Frontend split en 10 modules ES natifs. Backend: 7 APIRouter modules. Nouvelles features: exercise daily cap (2.0/jour), muscle preservation (protein/kg lean mass avec alertes). Regime configure: Carnivore + 23h OMAD.

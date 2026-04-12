@@ -65,7 +65,7 @@ Docker: `docker compose up` → http://localhost:8001
 | Python 3.9+ / FastAPI | Backend API | `main.py` (54 lines) + `routes/` (7 modules) |
 | Pydantic | Request/response validation | `models.py` (116 lines) |
 | OpenAI API (async) | AI features (meal plans, recipes, analysis) | `ai_client.py` (325 lines) |
-| Vanilla JS | All frontend logic | `static/app.js` (1856 lines) |
+| Vanilla JS (ES modules) | Frontend logic | `static/app.js` (104 lines) + `static/modules/` (10 modules) |
 | CSS custom properties | Dark/light themes, responsive | `static/style.css` (1394 lines) |
 | JSON files | Storage (no database) | `storage.py` → `data/*.json` |
 | Keto domain data | Timelines, tips, accelerators | `keto_data.py` (188 lines) |
@@ -82,7 +82,8 @@ Docker: `docker compose up` → http://localhost:8001
 | `storage.py` | JSON file CRUD (meals, weights, daily logs, groceries, plans) |
 | `config.py` | Environment variables (OPENAI_API_KEY, APP_HOST, CORS_ORIGINS) |
 | `keto_foods.json` | 50-item keto food database |
-| `static/app.js` | All frontend logic (navigation, API, charts, exercise, achievements) |
+| `static/app.js` | ES module entry point — imports all modules, assigns to window, init |
+| `static/modules/` | 10 ES modules: core, fasting, dashboard, meals, weight, trackers, food, ketosis, settings, progress |
 | `static/style.css` | Full CSS with dark/light themes, responsive, hub layout |
 | `templates/index.html` | Single-page app: hero grid, 4 tabs, modals |
 | `static/manifest.json` | PWA manifest |
@@ -138,15 +139,36 @@ Docker: `docker compose up` → http://localhost:8001
 - **innerHTML escaping:** All server strings → `esc()`. No exceptions.
 - **Daily log updates:** Always use `_patch_daily_log()` — never reconstruct DailyLog manually.
 
+## Session 2026-04-12 — Status
+
+- **Commit** `940d2d4` — 33 files, +4831 -412 lines
+- **2 code reviews** completed (17 + 8 fixes applied)
+- **main.py split** into 7 APIRouter modules (793→54 lines entry point)
+- **Governance** installed: INTENT.md, TASKS.md, CHANGELOG.md, AUDIT.md, ARCHITECTURE.md
+- **DB reset** during session (user requested). Profile set to Carnivore + 23h OMAD.
+
+## Warnings for Future Sessions
+
+- `app.js` split into 10 ES modules. Each module <320 lines. Entry point is 104 lines.
+- `Storage` class instantiated separately in each route module — not a singleton. Fine for JSON files but would be a problem with a real DB.
+- `keto_foods.json` loaded at import time in `routes/meals.py` — adding foods requires server restart.
+- Exercise bonus capped at 2.0/day. Walk max 3/day, fat_fast max 1/day.
+
 ## Known Issues
 
 | Issue | Severity | Notes |
 |-------|----------|-------|
+| Tests: backend only | Medium | 47 pytest tests for all routes. No frontend tests yet. |
 | Storage race conditions | Medium | Non-atomic JSON read-modify-write. OK for single user. |
-| app.js 1856 lines | Medium | Monolithic. Consider splitting if it grows past 2000. |
-| No automated tests | High | No pytest, no frontend tests. Priority for next session. |
+| app.js modules | Low | Split into 10 ES modules. Each <320 lines. No build step needed. |
 | API key in plaintext | Low | OpenAI key in `data/profile.json`. Not encrypted. |
 | No magic bytes on uploads | Low | MIME validated, content not verified. |
+
+## Next Steps
+
+1. **Frontend tests** — Playwright or similar for end-to-end testing
+2. **Muscle preservation** — protein/kg lean mass tracking, alerts if protein too low
+3. **More exercises** — add HIIT, weight training, swimming to tracker
 
 ## Glossaire Metier
 

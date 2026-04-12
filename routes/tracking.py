@@ -5,7 +5,7 @@ from datetime import date
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
 
-from keto_data import EXERCISE_IMPACTS
+from keto_data import EXERCISE_IMPACTS, DAILY_EXERCISE_BONUS_CAP
 from models import DailyLog, Exercise, ExerciseLogRequest
 from storage import Storage
 
@@ -87,12 +87,18 @@ async def log_exercise(data: ExerciseLogRequest):
         if count_today >= max_daily:
             return JSONResponse(status_code=400, content={"error": f"Max {max_daily} {impact['name']} per day (400mg caffeine limit)."})
 
+    raw_bonus = sum(e.get("bonus_days", 0) for e in exercises) + impact["bonus"]
+    if raw_bonus > DAILY_EXERCISE_BONUS_CAP:
+        return JSONResponse(status_code=400, content={
+            "error": f"Daily exercise bonus cap reached ({DAILY_EXERCISE_BONUS_CAP} days). Additional exercises won't accelerate ketosis further today."})
+
     exercises.append({"type": exercise_type, "name": impact["name"], "icon": impact["icon"],
                       "minutes": impact["minutes"], "bonus_days": impact["bonus"]})
     _patch_daily_log(today, exercises=exercises)
 
-    total_bonus = sum(e["bonus_days"] for e in exercises)
-    return {"status": "ok", "exercise": impact, "today_total_bonus": round(total_bonus, 1), "exercises": exercises}
+    total_bonus = min(sum(e["bonus_days"] for e in exercises), DAILY_EXERCISE_BONUS_CAP)
+    return {"status": "ok", "exercise": impact, "today_total_bonus": round(total_bonus, 1),
+            "daily_cap": DAILY_EXERCISE_BONUS_CAP, "exercises": exercises}
 
 
 @router.delete("/log-exercise")

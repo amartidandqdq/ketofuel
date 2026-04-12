@@ -160,6 +160,7 @@
                         </div>
                     </div>
                 </div>
+                <div id="protein-alert" style="display:none"></div>
                 <div class="card compact-card">
                     <h3 style="font-size:14px">Eating Window</h3>
                     <div id="meal-timing-bar" class="timing-bar-wrap"></div>
@@ -578,7 +579,7 @@
             <div id="snapshot-body"></div>
         </div>
     </div>
-    <script src="/static/app.js"></script>
+    <script type="module" src="/static/app.js"></script>
     <script>if('serviceWorker' in navigator) navigator.serviceWorker.register('/static/service-worker.js').catch(()=>{});</script>
 </body>
 </html>

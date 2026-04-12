@@ -1002,6 +1002,19 @@ select {
 .keto-zone.near-limit { background: rgba(245, 158, 11, 0.12); color: var(--amber); }
 .keto-zone.over-limit { background: rgba(239, 68, 68, 0.12); color: var(--red); }
 
+/* Protein alert (muscle preservation) */
+.protein-alert-card, .protein-ok-card {
+    display: flex; gap: 10px; align-items: flex-start;
+    padding: 10px 14px; border-radius: var(--radius);
+    font-size: 13px; margin-bottom: 6px;
+}
+.protein-alert-card { background: rgba(239, 68, 68, 0.10); border: 1px solid rgba(239, 68, 68, 0.25); }
+.protein-ok-card { background: var(--accent-glow); border: 1px solid rgba(34, 197, 94, 0.25); }
+.protein-alert-icon { font-size: 20px; flex-shrink: 0; }
+.protein-alert-body strong { display: block; margin-bottom: 2px; }
+.protein-alert-body p { margin: 0 0 4px; color: var(--text-primary); }
+.protein-alert-meta { color: var(--text-muted); font-size: 11px; }
+
 /* Fasting window */
 .fasting-card { border-color: var(--border); }
 

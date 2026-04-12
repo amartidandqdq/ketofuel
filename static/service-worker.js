@@ -1,5 +1,11 @@
-const CACHE_NAME = 'ketofuel-v1';
-const STATIC_ASSETS = ['/', '/static/app.js', '/static/style.css'];
+const CACHE_NAME = 'ketofuel-v2';
+const STATIC_ASSETS = [
+    '/', '/static/app.js', '/static/style.css',
+    '/static/modules/core.js', '/static/modules/fasting.js', '/static/modules/dashboard.js',
+    '/static/modules/meals.js', '/static/modules/weight.js', '/static/modules/trackers.js',
+    '/static/modules/food.js', '/static/modules/ketosis.js', '/static/modules/settings.js',
+    '/static/modules/progress.js',
+];
 
 self.addEventListener('install', e => {
     e.waitUntil(caches.open(CACHE_NAME).then(c => c.addAll(STATIC_ASSETS)));

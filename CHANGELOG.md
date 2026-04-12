@@ -1,5 +1,16 @@
 # CHANGELOG.md
 
+## 2026-04-12 — Tests, muscle preservation, exercise cap, module split
+
+- Ajoute: 47 tests pytest (profile, meals, tracking, weight, ketosis, dashboard)
+- Ajoute: /api/protein-status — protein/kg lean mass tracking + frontend alert
+- Ajoute: Exercise daily cap (2.0 bonus/jour max, walk 3/jour, fat_fast 1/jour)
+- Ajoute: PROTEIN_PER_KG_LEAN config par activity level (1.6-2.4g/kg)
+- Refactor: app.js split en 10 modules ES (1887 lignes → 104 entry + 10 modules <320)
+- Ajoute: pytest + httpx dans requirements.txt
+- Mis a jour: service-worker.js cache v2 avec tous les modules
+- Mis a jour: index.html script type="module"
+
 ## 2026-04-12 — Gouvernance autonome
 
 - Cree: INTENT.md, TASKS.md, CHANGELOG.md, AUDIT.md, ARCHITECTURE.md
