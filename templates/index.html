@@ -3,208 +3,342 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NutriPlan AI</title>
+    <title>KetoFuel - OMAD Meal Planner</title>
     <link rel="stylesheet" href="/static/style.css">
+    <link rel="manifest" href="/static/manifest.json">
+    <meta name="theme-color" content="#22c55e">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 </head>
 <body>
     <aside class="sidebar">
         <div class="logo">
-            <span class="logo-icon">N</span>
+            <span class="logo-icon">K</span>
             <div>
-                <h1>NutriPlan</h1>
-                <span class="logo-sub">AI Nutrition</span>
+                <h1>KetoFuel</h1>
+                <span class="logo-sub" id="logo-sub-text">Keto OMAD</span>
             </div>
         </div>
         <nav>
-            <a href="#" data-tab="dashboard" class="nav-link active">
-                <span class="nav-icon">&#9632;</span> Dashboard
+            <a href="#" data-tab="today" class="nav-link active">
+                <span class="nav-icon">&#9670;</span> Today
             </a>
-            <a href="#" data-tab="planner" class="nav-link">
-                <span class="nav-icon">&#9733;</span> Meal Planner
+            <a href="#" data-tab="meals" class="nav-link">
+                <span class="nav-icon">&#9733;</span> Meals
             </a>
-            <a href="#" data-tab="recipes" class="nav-link">
-                <span class="nav-icon">&#9827;</span> Recipe Finder
-            </a>
-            <a href="#" data-tab="tracker" class="nav-link">
-                <span class="nav-icon">&#9998;</span> Meal Log
-            </a>
-            <a href="#" data-tab="weight" class="nav-link">
-                <span class="nav-icon">&#8982;</span> Weight
+            <a href="#" data-tab="progress" class="nav-link">
+                <span class="nav-icon">&#9650;</span> Progress
             </a>
             <a href="#" data-tab="settings" class="nav-link">
                 <span class="nav-icon">&#9881;</span> Settings
             </a>
         </nav>
+        <div class="sidebar-footer">
+            <button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()" title="Toggle theme">
+                <span id="theme-icon">&#9790;</span>
+            </button>
+        </div>
     </aside>
 
     <main>
-        <!-- Dashboard -->
-        <section id="dashboard" class="tab-content active">
-            <h2>Dashboard</h2>
-            <div id="dash-stats" class="stats-grid">
-                <div class="stat-card">
-                    <div class="stat-label">Calories</div>
-                    <div class="stat-value" id="stat-cal">--</div>
-                    <div class="stat-sub" id="stat-cal-target">/ -- kcal</div>
-                    <div class="progress-bar"><div class="progress-fill" id="prog-cal"></div></div>
+        <div id="offline-banner" class="offline-banner hidden">Server unreachable. Retrying...</div>
+        <!-- ==================== TODAY ==================== -->
+        <section id="today" class="tab-content active">
+            <!-- HEADER -->
+            <div class="flex-between" style="margin-bottom:0">
+                <div style="display:flex;align-items:center;gap:12px">
+                    <h2 id="dash-heading" style="margin-bottom:0">Today</h2>
+                    <input type="date" id="dash-date-picker" onchange="loadDashboard()" style="font-size:13px">
                 </div>
-                <div class="stat-card">
-                    <div class="stat-label">Protein</div>
-                    <div class="stat-value" id="stat-protein">--</div>
-                    <div class="stat-sub" id="stat-protein-target">/ -- g</div>
-                    <div class="progress-bar"><div class="progress-fill protein" id="prog-protein"></div></div>
+                <span class="keto-mode-badge" id="keto-mode-badge"></span>
+            </div>
+
+            <!-- ===== HERO: Ketosis + Fasting + Exercise ===== -->
+            <div class="hero-grid">
+                <!-- Ketosis Journey (main hero) -->
+                <div class="card hero-ketosis" id="ketosis-tracker">
+                    <div class="flex-between" style="margin-bottom:0">
+                        <h3 style="margin-bottom:0">Ketosis Journey</h3>
+                        <span id="ketosis-day-badge" class="text-muted"></span>
+                    </div>
+                    <div id="ketosis-phases" class="ketosis-phases"></div>
+                    <div id="ketosis-info"></div>
                 </div>
-                <div class="stat-card">
-                    <div class="stat-label">Fat</div>
-                    <div class="stat-value" id="stat-fat">--</div>
-                    <div class="stat-sub" id="stat-fat-target">/ -- g</div>
-                    <div class="progress-bar"><div class="progress-fill fat" id="prog-fat"></div></div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-label">Carbs</div>
-                    <div class="stat-value" id="stat-carbs">--</div>
-                    <div class="stat-sub" id="stat-carbs-target">/ -- g</div>
-                    <div class="progress-bar"><div class="progress-fill carbs" id="prog-carbs"></div></div>
+
+                <!-- Fasting + Exercise (side column) -->
+                <div class="hero-side">
+                    <div class="card compact-card">
+                        <div class="flex-between" style="margin-bottom:0">
+                            <h3 style="margin-bottom:0;font-size:14px">Fasting</h3>
+                            <div id="fasting-status" class="fasting-badge fasting" style="font-size:11px;padding:2px 8px">Fasting</div>
+                        </div>
+                        <div class="fasting-bar-wrap" style="margin:8px 0 4px">
+                            <div class="fasting-bar" id="fasting-bar"></div>
+                        </div>
+                        <div style="text-align:center;font-size:12px;color:var(--accent)" id="fast-elapsed">--</div>
+                        <div class="fasting-actions" style="margin-top:6px">
+                            <button class="btn btn-sm btn-secondary" onclick="startFast()" style="font-size:11px">Start</button>
+                            <button class="btn btn-sm btn-primary" onclick="breakFast()" style="font-size:11px">Break</button>
+                        </div>
+                        <div class="fasting-labels hidden"><span id="fast-start-label"></span><span id="fast-goal-label"></span></div>
+                    </div>
+                    <div class="card compact-card">
+                        <div class="flex-between" style="margin-bottom:0">
+                            <h3 style="margin-bottom:0;font-size:14px">Exercise</h3>
+                            <span class="text-muted" style="font-size:11px" id="exercise-bonus-badge"></span>
+                        </div>
+                        <div class="exercise-grid compact" id="exercise-grid" style="margin-top:6px"></div>
+                        <div id="exercise-today-log"></div>
+                    </div>
                 </div>
             </div>
 
-            <div class="dash-row">
+            <!-- ===== ROW 2: Weekly + Trackers ===== -->
+            <div class="dash-row-2">
+                <!-- Weekly Summary -->
+                <div class="card compact-card" id="weekly-summary-card">
+                    <h3 style="font-size:14px;margin-bottom:8px">This Week</h3>
+                    <div id="weekly-summary" class="weekly-grid">
+                        <div class="weekly-item"><div class="weekly-value" id="ws-avg-cal">--</div><div class="weekly-label">avg kcal</div></div>
+                        <div class="weekly-item"><div class="weekly-value" id="ws-avg-carbs">--</div><div class="weekly-label">net carbs</div></div>
+                        <div class="weekly-item"><div class="weekly-value" id="ws-compliance">--</div><div class="weekly-label">compliance</div></div>
+                        <div class="weekly-item"><div class="weekly-value" id="ws-weight">--</div><div class="weekly-label">weight</div></div>
+                    </div>
+                </div>
+
+                <!-- Streak + Water + Electrolytes -->
+                <div class="tracker-row compact">
+                    <div class="card tracker-card mini">
+                        <div class="tracker-icon" style="font-size:20px">&#128293;</div>
+                        <div class="tracker-value" id="streak-count" style="font-size:22px">0</div>
+                        <div class="tracker-label">streak</div>
+                    </div>
+                    <div class="card tracker-card mini">
+                        <div class="tracker-icon" style="font-size:20px">&#128167;</div>
+                        <div class="tracker-value" id="water-count" style="font-size:22px">0</div>
+                        <div class="tracker-label">water</div>
+                        <div class="water-target" id="water-target-label">0 / 12</div>
+                        <div class="tracker-actions">
+                            <button class="tracker-btn" onclick="removeWater()">-</button>
+                            <button class="tracker-btn add" onclick="addWater()">+</button>
+                        </div>
+                    </div>
+                    <div class="card tracker-card mini">
+                        <div class="tracker-icon" style="font-size:20px">&#9889;</div>
+                        <div class="tracker-label">Electrolytes</div>
+                        <div class="electro-bars">
+                            <div class="electro-bar-row"><span>Sodium</span><div class="progress-bar"><div class="progress-fill" id="prog-sodium" style="background:var(--amber)"></div></div><span class="electro-val" id="val-sodium">0</span></div>
+                            <div class="electro-bar-row"><span>Potassium</span><div class="progress-bar"><div class="progress-fill" id="prog-potassium" style="background:var(--blue)"></div></div><span class="electro-val" id="val-potassium">0</span></div>
+                            <div class="electro-bar-row"><span>Magnesium</span><div class="progress-bar"><div class="progress-fill" id="prog-magnesium" style="background:var(--purple)"></div></div><span class="electro-val" id="val-magnesium">0</span></div>
+                        </div>
+                        <button class="btn btn-sm btn-secondary" onclick="showElectroForm()" style="margin-top:4px;width:100%;font-size:11px">Log</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Electrolyte form (hidden) -->
+            <div class="card hidden" id="electro-form">
+                <h3>Log Electrolytes</h3>
+                <div class="form-row">
+                    <div class="form-group"><label>Sodium (mg)</label><input type="number" id="log-sodium" placeholder="e.g., 1000"></div>
+                    <div class="form-group"><label>Potassium (mg)</label><input type="number" id="log-potassium" placeholder="e.g., 500"></div>
+                    <div class="form-group"><label>Magnesium (mg)</label><input type="number" id="log-magnesium" placeholder="e.g., 200"></div>
+                </div>
+                <button class="btn btn-primary btn-sm" onclick="saveElectrolytes()">Save</button>
+            </div>
+
+            <!-- ===== ROW 3: Macros (donut + bars) + Eating Window ===== -->
+            <div class="dash-row-3">
                 <div class="card">
-                    <h3>Quick Actions</h3>
-                    <div class="quick-actions">
-                        <button class="btn btn-primary" onclick="switchTab('planner')">Generate Meal Plan</button>
-                        <button class="btn btn-secondary" onclick="switchTab('recipes')">Find Recipes</button>
-                        <button class="btn btn-secondary" onclick="switchTab('tracker')">Log a Meal</button>
-                        <button class="btn btn-secondary" onclick="switchTab('weight')">Log Weight</button>
+                    <div class="macro-donut-row">
+                        <div id="macro-donut" class="macro-donut"></div>
+                        <div class="macro-bars-side">
+                            <div class="stat-card-mini"><div class="stat-label">Calories</div><div class="stat-value" id="stat-cal">--</div><div class="stat-sub" id="stat-cal-target">/ -- kcal</div><div class="progress-bar"><div class="progress-fill" id="prog-cal"></div></div></div>
+                            <div class="stat-card-mini keto-card"><div class="stat-label">Net Carbs</div><div class="stat-value" id="stat-net-carbs">--</div><div class="stat-sub" id="stat-carbs-target">/ 20g</div><div class="progress-bar"><div class="progress-fill carbs" id="prog-carbs"></div></div><div class="keto-zone" id="keto-zone">--</div></div>
+                            <div class="stat-card-mini"><div class="stat-label">Fat</div><div class="stat-value" id="stat-fat">--</div><div class="stat-sub" id="stat-fat-target">/ --g</div><div class="progress-bar"><div class="progress-fill fat" id="prog-fat"></div></div></div>
+                            <div class="stat-card-mini"><div class="stat-label">Protein</div><div class="stat-value" id="stat-protein">--</div><div class="stat-sub" id="stat-protein-target">/ --g</div><div class="progress-bar"><div class="progress-fill protein" id="prog-protein"></div></div></div>
+                        </div>
                     </div>
                 </div>
-                <div class="card">
-                    <h3>Weight Trend</h3>
-                    <div id="dash-weight-chart" class="weight-mini-chart">
-                        <p class="text-muted">No weight data yet</p>
-                    </div>
+                <div class="card compact-card">
+                    <h3 style="font-size:14px">Eating Window</h3>
+                    <div id="meal-timing-bar" class="timing-bar-wrap"></div>
                 </div>
             </div>
 
+            <!-- ===== ROW 4: Log Meal + Scanner + Favorites ===== -->
             <div class="card">
-                <h3>Today's Meals</h3>
-                <div id="dash-meals">
-                    <p class="text-muted">No meals logged today</p>
-                </div>
-            </div>
-        </section>
-
-        <!-- Meal Planner -->
-        <section id="planner" class="tab-content">
-            <h2>Meal Planner</h2>
-            <div class="card">
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Days</label>
-                        <select id="plan-days">
-                            <option value="1">1 day</option>
-                            <option value="3">3 days</option>
-                            <option value="5">5 days</option>
-                            <option value="7">7 days</option>
-                        </select>
-                    </div>
-                    <div class="form-group flex-grow">
-                        <label>Additional preferences (optional)</label>
-                        <input type="text" id="plan-prefs" placeholder="e.g., quick meals, high protein, Mediterranean flavors...">
-                    </div>
-                </div>
-                <button class="btn btn-primary" id="btn-generate-plan" onclick="generatePlan()">Generate Meal Plan</button>
-            </div>
-            <div id="plan-results"></div>
-        </section>
-
-        <!-- Recipe Finder -->
-        <section id="recipes" class="tab-content">
-            <h2>Recipe Finder</h2>
-            <div class="card">
-                <div class="form-group">
-                    <label>Available Ingredients</label>
-                    <div class="tag-input-wrap">
-                        <div id="ingredient-tags" class="tags"></div>
-                        <input type="text" id="ingredient-input" placeholder="Type ingredient and press Enter">
-                    </div>
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Max recipes</label>
-                        <select id="recipe-count">
-                            <option value="3">3</option>
-                            <option value="5">5</option>
-                        </select>
-                    </div>
-                    <div class="form-group flex-grow">
-                        <label>Preferences (optional)</label>
-                        <input type="text" id="recipe-prefs" placeholder="e.g., quick, comfort food, Asian...">
-                    </div>
-                </div>
-                <button class="btn btn-primary" id="btn-find-recipes" onclick="findRecipes()">Find Recipes</button>
-            </div>
-            <div id="recipe-results"></div>
-        </section>
-
-        <!-- Meal Log -->
-        <section id="tracker" class="tab-content">
-            <h2>Meal Log</h2>
-            <div class="card">
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Date</label>
-                        <input type="date" id="meal-date">
-                    </div>
-                    <div class="form-group flex-grow">
-                        <label>Meal Name</label>
-                        <input type="text" id="meal-name" placeholder="e.g., Lunch, Dinner, OMAD...">
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label>Meal Description</label>
-                    <textarea id="meal-desc" rows="3" placeholder="Describe what you ate, e.g., grilled salmon with avocado salad and olive oil dressing..."></textarea>
-                </div>
+                <h3 id="log-meal-title">Log Your Meal</h3>
+                <div class="form-group"><textarea id="meal-desc" rows="2" placeholder="Describe what you ate, e.g., ribeye steak with butter, avocado, and spinach salad..."></textarea></div>
                 <div class="form-row">
                     <button class="btn btn-secondary" onclick="analyzeMeal()">AI Analyze</button>
                     <button class="btn btn-primary" id="btn-log-meal" onclick="logMeal()">Log Meal</button>
+                    <input type="text" id="meal-name" placeholder="Meal name (optional)" style="flex:1;min-width:100px">
                 </div>
                 <div id="analysis-result" class="hidden"></div>
                 <div class="form-row macro-inputs hidden" id="macro-fields">
-                    <div class="form-group">
-                        <label>Calories</label>
-                        <input type="number" id="meal-cal" placeholder="kcal">
+                    <div class="form-group"><label>Calories</label><input type="number" id="meal-cal" placeholder="kcal"></div>
+                    <div class="form-group"><label>Fat (g)</label><input type="number" id="meal-fat" step="0.1"></div>
+                    <div class="form-group"><label>Protein (g)</label><input type="number" id="meal-protein" step="0.1"></div>
+                    <div class="form-group"><label>Total Carbs</label><input type="number" id="meal-carbs" step="0.1"></div>
+                    <div class="form-group"><label>Fiber (g)</label><input type="number" id="meal-fiber" step="0.1"></div>
+                    <div class="form-group"><label>Net Carbs</label><input type="number" id="meal-net-carbs" disabled placeholder="auto"></div>
+                </div>
+                <input type="hidden" id="meal-date">
+            </div>
+
+            <div class="dash-row-bottom">
+                <div class="card compact-card">
+                    <h3 style="font-size:14px">Scan Label</h3>
+                    <div class="form-row" style="margin-bottom:6px">
+                        <input type="file" id="label-photo" accept="image/*" capture="environment" style="font-size:11px;flex:1">
+                        <input type="number" id="label-grams" placeholder="grams" step="1" style="width:70px;font-size:12px">
                     </div>
-                    <div class="form-group">
-                        <label>Protein (g)</label>
-                        <input type="number" id="meal-protein" step="0.1">
-                    </div>
-                    <div class="form-group">
-                        <label>Fat (g)</label>
-                        <input type="number" id="meal-fat" step="0.1">
-                    </div>
-                    <div class="form-group">
-                        <label>Carbs (g)</label>
-                        <input type="number" id="meal-carbs" step="0.1">
-                    </div>
+                    <button class="btn btn-sm btn-secondary" id="btn-scan-label" onclick="scanLabel()" style="width:100%">Scan</button>
+                    <div id="scan-result" class="hidden"></div>
+                </div>
+                <div class="card compact-card">
+                    <h3 style="font-size:14px">Quick Re-log</h3>
+                    <div id="saved-meals-today"><p class="text-muted" style="font-size:12px">Log meals to see favorites here</p></div>
                 </div>
             </div>
 
-            <div class="card">
-                <div class="flex-between">
-                    <h3>Meal History</h3>
-                    <input type="date" id="history-date" onchange="loadMeals()">
+            <!-- Keto Flu (collapsible) -->
+            <div class="card compact-card">
+                <div class="flex-between" style="margin-bottom:0">
+                    <h3 style="margin-bottom:0;font-size:14px">Feeling Off?</h3>
+                    <button class="btn btn-sm btn-secondary" onclick="toggleFluChecker()" style="font-size:11px">Check Symptoms</button>
                 </div>
-                <div id="meal-history">
-                    <p class="text-muted">No meals logged</p>
+                <div id="flu-checker" class="hidden" style="margin-top:12px">
+                    <div class="symptom-grid" id="symptom-grid">
+                        <button class="symptom-btn" data-symptom="headache">Headache</button>
+                        <button class="symptom-btn" data-symptom="fatigue">Fatigue</button>
+                        <button class="symptom-btn" data-symptom="muscle cramps">Cramps</button>
+                        <button class="symptom-btn" data-symptom="brain fog">Brain Fog</button>
+                        <button class="symptom-btn" data-symptom="nausea">Nausea</button>
+                        <button class="symptom-btn" data-symptom="dizziness">Dizziness</button>
+                        <button class="symptom-btn" data-symptom="insomnia">Insomnia</button>
+                        <button class="symptom-btn" data-symptom="irritability">Irritability</button>
+                        <button class="symptom-btn" data-symptom="heart palpitations">Palpitations</button>
+                        <button class="symptom-btn" data-symptom="constipation">Constipation</button>
+                    </div>
+                    <button class="btn btn-primary btn-sm" id="btn-check-flu" onclick="checkKetoFlu()" style="margin-top:8px">Get AI Advice</button>
+                    <div id="flu-result"></div>
+                </div>
+            </div>
+
+            <!-- Today's meals + weight mini -->
+            <div class="dash-row-bottom">
+                <div class="card compact-card">
+                    <h3 style="font-size:14px">Today's Meals</h3>
+                    <div id="dash-meals"><p class="text-muted" style="font-size:12px">No meals logged today</p></div>
+                </div>
+                <div class="card compact-card">
+                    <h3 style="font-size:14px">Weight Trend</h3>
+                    <div id="dash-weight-chart" class="weight-mini-chart"><p class="text-muted" style="font-size:12px">No weight data yet</p></div>
                 </div>
             </div>
         </section>
 
-        <!-- Weight Tracking -->
-        <section id="weight" class="tab-content">
-            <h2>Weight Tracking</h2>
+        <!-- ==================== MEALS ==================== -->
+        <section id="meals" class="tab-content">
+            <h2>Meals</h2>
+
+            <!-- Sub-tabs -->
+            <div class="sub-tabs">
+                <button class="sub-tab active" data-subtab="planner" onclick="switchSubTab('meals', 'planner')">OMAD Planner</button>
+                <button class="sub-tab" data-subtab="recipes" onclick="switchSubTab('meals', 'recipes')">Recipes</button>
+                <button class="sub-tab" data-subtab="fooddb" onclick="switchSubTab('meals', 'fooddb'); loadFoodDB()">Food DB</button>
+                <button class="sub-tab" data-subtab="favorites" onclick="switchSubTab('meals', 'favorites')">Favorites</button>
+            </div>
+
+            <!-- Planner sub-tab -->
+            <div id="sub-planner" class="sub-content active">
+                <div class="card">
+                    <p class="text-muted" style="margin-bottom:12px">One powerful keto meal per day — all your macros in a single sitting.</p>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Days</label>
+                            <select id="plan-days">
+                                <option value="1">1 day</option>
+                                <option value="3">3 days</option>
+                                <option value="5">5 days</option>
+                                <option value="7">7 days (full week)</option>
+                            </select>
+                        </div>
+                        <div class="form-group flex-grow">
+                            <label>Preferences (optional)</label>
+                            <input type="text" id="plan-prefs" placeholder="e.g., high fat, steak-based, Mediterranean keto...">
+                        </div>
+                    </div>
+                    <button class="btn btn-primary" id="btn-generate-plan" onclick="generatePlan()">Generate OMAD Plan</button>
+                </div>
+                <div id="plan-results"></div>
+            </div>
+
+            <!-- Recipes sub-tab -->
+            <div id="sub-recipes" class="sub-content">
+                <div class="card">
+                    <div class="form-group">
+                        <label>Available Ingredients</label>
+                        <div class="tag-input-wrap">
+                            <div id="ingredient-tags" class="tags"></div>
+                            <input type="text" id="ingredient-input" placeholder="Type ingredient and press Enter">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Max recipes</label>
+                            <select id="recipe-count">
+                                <option value="3">3</option>
+                                <option value="5">5</option>
+                            </select>
+                        </div>
+                        <div class="form-group flex-grow">
+                            <label>Preferences (optional)</label>
+                            <input type="text" id="recipe-prefs" placeholder="e.g., quick, comfort food, Asian keto...">
+                        </div>
+                    </div>
+                    <button class="btn btn-primary" id="btn-find-recipes" onclick="findRecipes()">Find Keto Recipes</button>
+                </div>
+                <div id="recipe-results"></div>
+            </div>
+
+            <!-- Food DB sub-tab -->
+            <div id="sub-fooddb" class="sub-content">
+                <div class="card">
+                    <div class="form-row">
+                        <div class="form-group flex-grow">
+                            <input type="text" id="food-search" placeholder="Search keto foods..." oninput="searchFoodDB()">
+                        </div>
+                        <div class="form-group">
+                            <select id="food-cat-filter" onchange="searchFoodDB()">
+                                <option value="">All categories</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div id="food-results" class="food-grid"></div>
+                </div>
+            </div>
+
+            <!-- Favorites sub-tab -->
+            <div id="sub-favorites" class="sub-content">
+                <div class="card">
+                    <p class="text-muted" style="margin-bottom:12px">Your saved meals. Click to re-log instantly.</p>
+                    <div id="favorites-list">
+                        <p class="text-muted">No favorites yet. Log meals and they'll appear here for quick re-logging.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== PROGRESS ==================== -->
+        <section id="progress" class="tab-content">
+            <div class="flex-between"><h2 style="margin-bottom:0">Progress</h2><a href="/api/export" class="btn btn-sm btn-secondary" download>Export CSV</a></div>
+
+            <!-- Weight log + chart -->
             <div class="card">
+                <h3>Log Weight</h3>
                 <div class="form-row">
                     <div class="form-group">
                         <label>Date</label>
@@ -216,7 +350,7 @@
                     </div>
                     <div class="form-group flex-grow">
                         <label>Notes (optional)</label>
-                        <input type="text" id="weight-notes" placeholder="e.g., after workout, morning...">
+                        <input type="text" id="weight-notes" placeholder="e.g., morning, after workout...">
                     </div>
                 </div>
                 <button class="btn btn-primary" onclick="logWeight()">Log Weight</button>
@@ -224,38 +358,139 @@
 
             <div class="card">
                 <div class="flex-between">
-                    <h3>Weight History</h3>
+                    <h3>Weight Chart</h3>
                     <button class="btn btn-sm btn-secondary" id="btn-weight-insight" onclick="getWeightInsight()">AI Insight</button>
                 </div>
                 <div id="weight-chart" class="weight-chart"></div>
                 <div id="weight-insight" class="hidden"></div>
                 <div id="weight-history"></div>
             </div>
+
+            <!-- Achievements -->
+            <div class="card">
+                <h3>Achievements</h3>
+                <div id="achievements-grid" class="achievements-grid"></div>
+            </div>
+
+            <!-- Body Composition -->
+            <div class="card">
+                <h3>Body Composition</h3>
+                <div id="body-comp"></div>
+            </div>
+
+            <!-- Deficit slider -->
+            <div class="card" id="deficit-card">
+                <h3>Weight Loss Planner</h3>
+                <div id="deficit-slider-wrap" class="hidden">
+                    <div class="deficit-summary">
+                        <div class="deficit-summary-item">
+                            <span class="deficit-label">Daily intake</span>
+                            <span class="deficit-value" id="ds-calories">--</span>
+                            <span class="deficit-label">kcal/day</span>
+                        </div>
+                        <div class="deficit-summary-item highlight">
+                            <span class="deficit-label">Weekly loss</span>
+                            <span class="deficit-value" id="ds-weekly">--</span>
+                            <span class="deficit-label">kg/week</span>
+                        </div>
+                        <div class="deficit-summary-item">
+                            <span class="deficit-label">Reach goal in</span>
+                            <span class="deficit-value" id="ds-timeline">--</span>
+                            <span class="deficit-label" id="ds-timeline-sub"></span>
+                        </div>
+                    </div>
+                    <div class="slider-section">
+                        <div class="slider-labels">
+                            <span>Gentle</span>
+                            <span>Moderate</span>
+                            <span>Aggressive</span>
+                        </div>
+                        <input type="range" id="deficit-slider" min="10" max="100" value="50" step="1" oninput="onDeficitSlide()">
+                        <div class="slider-detail">
+                            <span>TDEE: <b id="ds-tdee">--</b> kcal</span>
+                            <span>Deficit: <b id="ds-deficit">--</b> kcal/day</span>
+                        </div>
+                    </div>
+                    <button class="btn btn-primary" onclick="applySliderCalories()" style="margin-top:12px">Apply This Plan</button>
+                </div>
+                <div id="deficit-empty">
+                    <p class="text-muted">Set your body stats and target weight in Settings first.</p>
+                    <button class="btn btn-sm btn-secondary" onclick="switchTab('settings')" style="margin-top:8px">Go to Settings</button>
+                </div>
+            </div>
+
+            <!-- Meal history -->
+            <div class="card">
+                <div class="flex-between">
+                    <h3>Meal History</h3>
+                    <input type="date" id="history-date" onchange="loadMeals()">
+                </div>
+                <div id="meal-history">
+                    <p class="text-muted">No meals logged</p>
+                </div>
+            </div>
         </section>
 
-        <!-- Settings -->
+        <!-- ==================== SETTINGS ==================== -->
         <section id="settings" class="tab-content">
             <h2>Settings</h2>
+
+            <!-- Keto Mode -->
             <div class="card">
-                <h3>Profile</h3>
+                <h3>Pick Your Keto Mode</h3>
+                <div class="keto-presets" id="keto-presets"></div>
+                <input type="hidden" id="set-diet" value="keto_omad">
+            </div>
+
+            <!-- Profile & Goal -->
+            <div class="card">
+                <h3>Profile & Goal</h3>
+                <div class="form-group">
+                    <label>Name</label>
+                    <input type="text" id="set-name" placeholder="Your name">
+                </div>
                 <div class="form-row">
-                    <div class="form-group flex-grow">
-                        <label>Name</label>
-                        <input type="text" id="set-name" placeholder="Your name">
+                    <div class="form-group">
+                        <label>Sex</label>
+                        <select id="set-sex">
+                            <option value="male">Male</option>
+                            <option value="female">Female</option>
+                        </select>
                     </div>
                     <div class="form-group">
-                        <label>Diet Type</label>
-                        <select id="set-diet">
-                            <option value="keto_omad">Keto OMAD</option>
-                            <option value="omad">OMAD</option>
-                            <option value="keto">Keto</option>
-                            <option value="paleo">Paleo</option>
-                            <option value="mediterranean">Mediterranean</option>
-                            <option value="standard">Standard</option>
-                            <option value="custom">Custom</option>
+                        <label>Age</label>
+                        <input type="number" id="set-age" placeholder="30">
+                    </div>
+                    <div class="form-group">
+                        <label>Activity Level</label>
+                        <select id="set-activity">
+                            <option value="1.2">Sedentary (desk job)</option>
+                            <option value="1.375">Light (1-3x/week)</option>
+                            <option value="1.55">Moderate (3-5x/week)</option>
+                            <option value="1.725">Active (6-7x/week)</option>
+                            <option value="1.9">Very active (athlete)</option>
                         </select>
                     </div>
                 </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Height (cm)</label>
+                        <input type="number" id="set-height" placeholder="178">
+                    </div>
+                    <div class="form-group">
+                        <label>Current Weight (kg)</label>
+                        <input type="number" id="set-current-weight" step="0.1" placeholder="85">
+                    </div>
+                    <div class="form-group">
+                        <label>Target Weight (kg)</label>
+                        <input type="number" id="set-target-weight" step="0.1" placeholder="75">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Macros -->
+            <div class="card">
+                <h3>Macros</h3>
                 <div class="form-row">
                     <div class="form-group">
                         <label>Calorie Target</label>
@@ -274,23 +509,30 @@
                         <input type="number" id="set-carbs" value="5" step="1">
                     </div>
                 </div>
-
-                <h3>Body</h3>
                 <div class="form-row">
                     <div class="form-group">
-                        <label>Height (cm)</label>
-                        <input type="number" id="set-height" placeholder="175">
+                        <label>Net Carb Limit (g/day)</label>
+                        <input type="number" id="set-carb-limit" value="20">
                     </div>
                     <div class="form-group">
-                        <label>Current Weight (kg)</label>
-                        <input type="number" id="set-current-weight" step="0.1" placeholder="80">
+                        <label>Fasting Protocol</label>
+                        <div class="if-presets">
+                            <button class="if-preset" onclick="setIF(16)">16:8</button>
+                            <button class="if-preset" onclick="setIF(18)">18:6</button>
+                            <button class="if-preset" onclick="setIF(20)">20:4</button>
+                            <button class="if-preset active" onclick="setIF(23)">23:1<span>OMAD</span></button>
+                        </div>
+                        <input type="hidden" id="set-fasting-hours" value="23">
                     </div>
                     <div class="form-group">
-                        <label>Target Weight (kg)</label>
-                        <input type="number" id="set-target-weight" step="0.1" placeholder="72">
+                        <label>Keto Start Date</label>
+                        <input type="date" id="set-keto-start">
                     </div>
                 </div>
+            </div>
 
+            <!-- Preferences -->
+            <div class="card">
                 <h3>Preferences</h3>
                 <div class="form-group">
                     <label>Allergies</label>
@@ -313,19 +555,30 @@
                         <input type="text" id="cuisine-input" placeholder="e.g., Japanese, French, Mexican...">
                     </div>
                 </div>
+            </div>
 
+            <!-- API -->
+            <div class="card">
                 <h3>API</h3>
                 <div class="form-group">
                     <label>OpenAI API Key <span id="api-key-status"></span></label>
                     <input type="password" id="set-api-key" placeholder="sk-...">
                 </div>
-
-                <button class="btn btn-primary" onclick="saveSettings()">Save Settings</button>
-                <span id="settings-status"></span>
             </div>
+
+            <button class="btn btn-primary" onclick="saveSettings()">Save Settings</button>
+            <span id="settings-status"></span>
         </section>
     </main>
 
+    <!-- Daily Snapshot Modal -->
+    <div id="snapshot-modal" class="modal hidden" onclick="if(event.target===this)this.classList.add('hidden')">
+        <div class="modal-content">
+            <div class="flex-between"><h3 id="snapshot-title">Day Details</h3><button class="btn-delete" onclick="document.getElementById('snapshot-modal').classList.add('hidden')">&times;</button></div>
+            <div id="snapshot-body"></div>
+        </div>
+    </div>
     <script src="/static/app.js"></script>
+    <script>if('serviceWorker' in navigator) navigator.serviceWorker.register('/static/service-worker.js').catch(()=>{});</script>
 </body>
 </html>

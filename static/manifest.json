@@ -1,0 +1,21 @@
+{
+  "name": "KetoFuel - Keto OMAD Planner",
+  "short_name": "KetoFuel",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a0a0a",
+  "theme_color": "#22c55e",
+  "description": "Keto OMAD meal planner with AI-powered nutrition tracking",
+  "icons": [
+    {
+      "src": "/static/icon-192.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml"
+    },
+    {
+      "src": "/static/icon-512.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml"
+    }
+  ]
+}

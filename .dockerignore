@@ -1,0 +1,9 @@
+.env
+data/
+.git/
+__pycache__/
+.venv/
+*.pyc
+CC-Session-Logs/
+CLAUDE.md
+.claude/
