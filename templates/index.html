@@ -19,22 +19,22 @@
                 <span class="logo-sub" id="logo-sub-text">Keto OMAD</span>
             </div>
         </div>
-        <nav>
-            <a href="#" data-tab="today" class="nav-link active">
+        <nav role="tablist" aria-label="Main navigation">
+            <a href="#" data-tab="today" class="nav-link active" role="tab" aria-selected="true" aria-label="Today">
                 <span class="nav-icon">&#9670;</span> Today
             </a>
-            <a href="#" data-tab="meals" class="nav-link">
+            <a href="#" data-tab="meals" class="nav-link" role="tab" aria-selected="false" aria-label="Meals">
                 <span class="nav-icon">&#9733;</span> Meals
             </a>
-            <a href="#" data-tab="progress" class="nav-link">
+            <a href="#" data-tab="progress" class="nav-link" role="tab" aria-selected="false" aria-label="Progress">
                 <span class="nav-icon">&#9650;</span> Progress
             </a>
-            <a href="#" data-tab="settings" class="nav-link">
+            <a href="#" data-tab="settings" class="nav-link" role="tab" aria-selected="false" aria-label="Settings">
                 <span class="nav-icon">&#9881;</span> Settings
             </a>
         </nav>
         <div class="sidebar-footer">
-            <button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()" title="Toggle theme">
+            <button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()" title="Toggle theme" aria-label="Toggle dark/light theme">
                 <span id="theme-icon">&#9790;</span>
             </button>
         </div>
@@ -43,7 +43,7 @@
     <main>
         <div id="offline-banner" class="offline-banner hidden">Server unreachable. Retrying...</div>
         <!-- ==================== TODAY ==================== -->
-        <section id="today" class="tab-content active">
+        <section id="today" class="tab-content active" role="tabpanel" aria-label="Today dashboard">
             <!-- HEADER -->
             <div class="flex-between" style="margin-bottom:0">
                 <div style="display:flex;align-items:center;gap:12px">
@@ -80,6 +80,7 @@
                             <button class="btn btn-sm btn-secondary" onclick="startFast()" style="font-size:11px">Start</button>
                             <button class="btn btn-sm btn-primary" onclick="breakFast()" style="font-size:11px">Break</button>
                         </div>
+                        <div id="fasting-history" class="fasting-history" style="margin-top:6px"></div>
                         <div class="fasting-labels hidden"><span id="fast-start-label"></span><span id="fast-goal-label"></span></div>
                     </div>
                     <div class="card compact-card">
@@ -119,8 +120,8 @@
                         <div class="tracker-label">water</div>
                         <div class="water-target" id="water-target-label">0 / 12</div>
                         <div class="tracker-actions">
-                            <button class="tracker-btn" onclick="removeWater()">-</button>
-                            <button class="tracker-btn add" onclick="addWater()">+</button>
+                            <button class="tracker-btn" onclick="removeWater()" aria-label="Remove water glass">-</button>
+                            <button class="tracker-btn add" onclick="addWater()" aria-label="Add water glass">+</button>
                         </div>
                     </div>
                     <div class="card tracker-card mini">
@@ -170,7 +171,7 @@
             <!-- ===== ROW 4: Log Meal + Scanner + Favorites ===== -->
             <div class="card">
                 <h3 id="log-meal-title">Log Your Meal</h3>
-                <div class="form-group"><textarea id="meal-desc" rows="2" placeholder="Describe what you ate, e.g., ribeye steak with butter, avocado, and spinach salad..."></textarea></div>
+                <div class="form-group"><textarea id="meal-desc" rows="2" placeholder="Describe what you ate, e.g., ribeye steak with butter, avocado, and spinach salad..." aria-label="Meal description" aria-required="true"></textarea></div>
                 <div class="form-row">
                     <button class="btn btn-secondary" onclick="analyzeMeal()">AI Analyze</button>
                     <button class="btn btn-primary" id="btn-log-meal" onclick="logMeal()">Log Meal</button>
@@ -190,13 +191,20 @@
 
             <div class="dash-row-bottom">
                 <div class="card compact-card">
-                    <h3 style="font-size:14px">Scan Label</h3>
+                    <h3 style="font-size:14px">Scan</h3>
                     <div class="form-row" style="margin-bottom:6px">
-                        <input type="file" id="label-photo" accept="image/*" capture="environment" style="font-size:11px;flex:1">
-                        <input type="number" id="label-grams" placeholder="grams" step="1" style="width:70px;font-size:12px">
+                        <input type="text" id="barcode-input" placeholder="Barcode number" style="flex:1;font-size:12px">
+                        <button class="btn btn-sm btn-primary" onclick="lookupBarcode()" style="white-space:nowrap">Lookup</button>
                     </div>
-                    <button class="btn btn-sm btn-secondary" id="btn-scan-label" onclick="scanLabel()" style="width:100%">Scan</button>
-                    <div id="scan-result" class="hidden"></div>
+                    <div id="barcode-result"></div>
+                    <div style="border-top:1px solid var(--border);margin:8px 0;padding-top:8px">
+                        <div class="form-row" style="margin-bottom:6px">
+                            <input type="file" id="label-photo" accept="image/*" capture="environment" style="font-size:11px;flex:1">
+                            <input type="number" id="label-grams" placeholder="grams" step="1" style="width:70px;font-size:12px">
+                        </div>
+                        <button class="btn btn-sm btn-secondary" id="btn-scan-label" onclick="scanLabel()" style="width:100%">Scan Label Photo</button>
+                        <div id="scan-result" class="hidden"></div>
+                    </div>
                 </div>
                 <div class="card compact-card">
                     <h3 style="font-size:14px">Quick Re-log</h3>
@@ -242,7 +250,7 @@
         </section>
 
         <!-- ==================== MEALS ==================== -->
-        <section id="meals" class="tab-content">
+        <section id="meals" class="tab-content" role="tabpanel" aria-label="Meals planning">
             <h2>Meals</h2>
 
             <!-- Sub-tabs -->
@@ -275,6 +283,10 @@
                     <button class="btn btn-primary" id="btn-generate-plan" onclick="generatePlan()">Generate OMAD Plan</button>
                 </div>
                 <div id="plan-results"></div>
+                <div class="card" style="margin-top:12px">
+                    <h3 style="font-size:14px">Saved Plans</h3>
+                    <div id="saved-plans"><p class="text-muted">No saved plans yet</p></div>
+                </div>
             </div>
 
             <!-- Recipes sub-tab -->
@@ -320,6 +332,16 @@
                     </div>
                     <div id="food-results" class="food-grid"></div>
                 </div>
+                <div class="card" style="margin-top:12px">
+                    <h3 style="font-size:14px">Search All Foods (Open Food Facts)</h3>
+                    <div class="form-row">
+                        <div class="form-group flex-grow">
+                            <input type="text" id="off-search" placeholder="Search any food product..." aria-label="Search food database">
+                        </div>
+                        <button class="btn btn-sm btn-primary" onclick="searchOpenFoodFacts()">Search</button>
+                    </div>
+                    <div id="off-results"></div>
+                </div>
             </div>
 
             <!-- Favorites sub-tab -->
@@ -334,8 +356,14 @@
         </section>
 
         <!-- ==================== PROGRESS ==================== -->
-        <section id="progress" class="tab-content">
-            <div class="flex-between"><h2 style="margin-bottom:0">Progress</h2><a href="/api/export" class="btn btn-sm btn-secondary" download>Export CSV</a></div>
+        <section id="progress" class="tab-content" role="tabpanel" aria-label="Progress tracking">
+            <div class="flex-between"><h2 style="margin-bottom:0">Progress</h2><div style="display:flex;gap:6px"><a href="/api/export" class="btn btn-sm btn-secondary" download>CSV</a><a href="/api/export-json" class="btn btn-sm btn-secondary" download>JSON Backup</a><button class="btn btn-sm btn-secondary" onclick="document.getElementById('import-file').click()">Import</button><input type="file" id="import-file" accept=".json" style="display:none" onchange="importBackup(this)"></div></div>
+
+            <!-- Compliance Streaks -->
+            <div class="card">
+                <h3>Net Carb Compliance</h3>
+                <div id="compliance-streaks"></div>
+            </div>
 
             <!-- Weight log + chart -->
             <div class="card">
@@ -367,9 +395,25 @@
                 <div id="weight-history"></div>
             </div>
 
+            <!-- Macro Trends -->
+            <div class="card">
+                <div class="flex-between">
+                    <h3>Macro Trends</h3>
+                    <div class="trend-period-btns">
+                        <button class="btn btn-sm btn-secondary active" onclick="loadMacroTrends(7)" data-trend-days="7">7d</button>
+                        <button class="btn btn-sm btn-secondary" onclick="loadMacroTrends(14)" data-trend-days="14">14d</button>
+                        <button class="btn btn-sm btn-secondary" onclick="loadMacroTrends(30)" data-trend-days="30">30d</button>
+                    </div>
+                </div>
+                <div id="macro-trends"></div>
+            </div>
+
             <!-- Achievements -->
             <div class="card">
-                <h3>Achievements</h3>
+                <div class="flex-between">
+                    <h3>Achievements</h3>
+                    <button class="btn btn-sm btn-secondary" onclick="shareAchievements()" aria-label="Share achievements">Share</button>
+                </div>
                 <div id="achievements-grid" class="achievements-grid"></div>
             </div>
 
@@ -433,7 +477,7 @@
         </section>
 
         <!-- ==================== SETTINGS ==================== -->
-        <section id="settings" class="tab-content">
+        <section id="settings" class="tab-content" role="tabpanel" aria-label="Settings">
             <h2>Settings</h2>
 
             <!-- Keto Mode -->
@@ -573,11 +617,16 @@
     </main>
 
     <!-- Daily Snapshot Modal -->
-    <div id="snapshot-modal" class="modal hidden" onclick="if(event.target===this)this.classList.add('hidden')">
+    <div id="snapshot-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="snapshot-title" onclick="if(event.target===this)this.classList.add('hidden')">
         <div class="modal-content">
             <div class="flex-between"><h3 id="snapshot-title">Day Details</h3><button class="btn-delete" onclick="document.getElementById('snapshot-modal').classList.add('hidden')">&times;</button></div>
             <div id="snapshot-body"></div>
         </div>
+    </div>
+    <div id="pwa-install-banner" class="pwa-install-banner" style="display:none">
+        <span>Install KetoFuel for offline access</span>
+        <button class="btn btn-sm btn-primary" onclick="installPWA()">Install</button>
+        <button class="btn btn-sm btn-secondary" onclick="dismissPWA()" aria-label="Dismiss install prompt">&times;</button>
     </div>
     <script type="module" src="/static/app.js"></script>
     <script>if('serviceWorker' in navigator) navigator.serviceWorker.register('/static/service-worker.js').catch(()=>{});</script>

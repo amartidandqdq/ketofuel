@@ -1405,3 +1405,65 @@ input[type="range"]::-moz-range-thumb {
     .body-comp-grid { grid-template-columns: repeat(2, 1fr); }
     .achievements-grid { grid-template-columns: repeat(3, 1fr); }
 }
+
+/* ===== Macro Trends ===== */
+.trend-period-btns { display: flex; gap: 4px; }
+.trend-period-btns .btn { padding: 2px 10px; font-size: 11px; }
+.trend-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 10px; }
+.trend-stat { text-align: center; }
+.trend-stat-val { font-size: 16px; font-weight: 600; color: var(--primary); }
+.trend-stat-label { font-size: 10px; color: var(--text-secondary); text-transform: uppercase; }
+
+/* ===== Accessibility ===== */
+:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+button:focus-visible, .btn:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.2); }
+
+/* ===== Fasting History ===== */
+.fasting-history-item { display: flex; justify-content: space-between; padding: 2px 0; color: var(--text-secondary); font-size: 11px; }
+.fasting-duration { font-weight: 600; color: var(--primary); }
+
+/* ===== Saved Plans ===== */
+.saved-plan-item { padding: 8px; border-bottom: 1px solid var(--border); }
+.saved-plan-item:last-child { border-bottom: none; }
+
+/* ===== Tablet Breakpoint ===== */
+@media (max-width: 768px) {
+    .hero-grid { grid-template-columns: 1fr; }
+    .hero-side { grid-template-columns: 1fr 1fr; }
+    .dash-row-2 { grid-template-columns: 1fr; }
+    .dash-row-3 { grid-template-columns: 1fr; }
+    .macro-donut-row { flex-direction: column; align-items: center; }
+    .macro-bars-side { width: 100%; }
+    .form-row { flex-direction: column; }
+    .form-row .form-group { width: 100%; }
+    .tracker-row { grid-template-columns: 1fr 1fr; }
+    .dash-row-bottom { grid-template-columns: 1fr; }
+    button, .btn { min-height: 44px; }
+    .tracker-btn { min-width: 44px; min-height: 44px; }
+    .trend-stats { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* ===== Compliance Streak Badge ===== */
+.streak-badge { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; }
+.streak-badge.active { background: rgba(34, 197, 94, 0.15); color: var(--primary); }
+.streak-badge.inactive { background: var(--card); color: var(--text-secondary); }
+
+/* ===== Share Buttons ===== */
+.share-btns { display: flex; gap: 6px; margin-top: 8px; }
+.share-btn { padding: 4px 12px; border-radius: 6px; font-size: 11px; border: 1px solid var(--border); background: var(--card); color: var(--text); cursor: pointer; }
+.share-btn:hover { background: var(--primary); color: white; border-color: var(--primary); }
+
+/* ===== Compliance Streak Dots ===== */
+.streak-dots { display: flex; gap: 4px; flex-wrap: wrap; }
+.streak-dot { width: 36px; text-align: center; padding: 4px 0; border-radius: 6px; font-size: 9px; }
+.streak-dot span { display: block; color: var(--text-secondary); }
+.dot-ok { background: rgba(34, 197, 94, 0.2); border: 1px solid var(--primary); }
+.dot-fail { background: rgba(239, 68, 68, 0.15); border: 1px solid #ef4444; }
+.dot-empty { background: var(--card); border: 1px solid var(--border); }
+
+/* ===== Body Comp Trend ===== */
+.bodycomp-trend-chart { margin-top: 12px; }
+
+/* ===== PWA Install ===== */
+.pwa-install-banner { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--card); border: 1px solid var(--primary); border-radius: 12px; padding: 12px 20px; display: flex; align-items: center; gap: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.3); z-index: 1000; }
+.pwa-install-banner button { white-space: nowrap; }

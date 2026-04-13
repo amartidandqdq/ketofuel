@@ -1,6 +1,6 @@
 # POURQUOI: Daily logs (water, electrolytes), exercise, streak.
 
-from datetime import date
+from datetime import date, timedelta
 
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
@@ -85,7 +85,8 @@ async def log_exercise(data: ExerciseLogRequest):
     if max_daily:
         count_today = sum(1 for e in exercises if e.get("type") == exercise_type)
         if count_today >= max_daily:
-            return JSONResponse(status_code=400, content={"error": f"Max {max_daily} {impact['name']} per day (400mg caffeine limit)."})
+            reason = impact.get("cap_reason", "daily limit reached")
+            return JSONResponse(status_code=400, content={"error": f"Max {max_daily} {impact['name']} per day ({reason})."})
 
     raw_bonus = sum(e.get("bonus_days", 0) for e in exercises) + impact["bonus"]
     if raw_bonus > DAILY_EXERCISE_BONUS_CAP:
@@ -113,6 +114,40 @@ async def clear_exercises(index: int = -1):
     _patch_daily_log(today, exercises=exercises)
     total_bonus = sum(e.get("bonus_days", 0) for e in exercises)
     return {"status": "ok", "today_total_bonus": round(total_bonus, 1), "exercises": exercises}
+
+
+@router.post("/fasting-log")
+async def log_fasting(start_ts: float = None, end_ts: float = None):
+    """Log a fasting window start or end (timestamps in ms since epoch)."""
+    today = date.today().isoformat()
+    daily_log = db.get_daily_log(today)
+    fasting_log = daily_log.get("fasting_log", [])
+
+    if start_ts and not end_ts:
+        fasting_log.append({"start": start_ts, "end": None})
+    elif end_ts and fasting_log:
+        for entry in reversed(fasting_log):
+            if entry.get("end") is None:
+                entry["end"] = end_ts
+                break
+
+    _patch_daily_log(today, fasting_log=fasting_log)
+    return {"status": "ok", "fasting_log": fasting_log}
+
+
+@router.get("/fasting-history")
+async def fasting_history(days: int = 7):
+    """Get completed fasting windows for the last N days."""
+    today = date.today()
+    history = []
+    for i in range(days):
+        d = (today - timedelta(days=i)).isoformat()
+        log = db.get_daily_log(d)
+        for entry in log.get("fasting_log", []):
+            if entry.get("start") and entry.get("end"):
+                duration_h = round((entry["end"] - entry["start"]) / 3600000, 1)
+                history.append({"date": d, "start": entry["start"], "end": entry["end"], "duration_h": duration_h})
+    return {"history": history}
 
 
 @router.get("/streak")

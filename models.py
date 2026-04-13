@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Optional
 from enum import Enum
 
@@ -21,7 +21,7 @@ class DietType(str, Enum):
 class UserProfile(BaseModel):
     name: str = ""
     diet_type: DietType = DietType.KETO_OMAD
-    calorie_target: int = 2000
+    calorie_target: int = Field(default=2000, ge=500, le=10000)
     protein_ratio: float = 25.0
     fat_ratio: float = 70.0
     carb_ratio: float = 5.0
@@ -29,14 +29,14 @@ class UserProfile(BaseModel):
     cuisine_preferences: list[str] = []
     excluded_ingredients: list[str] = []
     sex: str = "male"
-    age: int = 30
+    age: int = Field(default=30, ge=1, le=150)
     activity_level: float = 1.375
-    height_cm: float = 0
-    current_weight_kg: float = 0
-    target_weight_kg: float = 0
+    height_cm: float = Field(default=0, ge=0, le=300)
+    current_weight_kg: float = Field(default=0, ge=0, le=500)
+    target_weight_kg: float = Field(default=0, ge=0, le=500)
     keto_start_date: str = ""
-    net_carb_limit: int = 20
-    fasting_goal_hours: int = 23
+    net_carb_limit: int = Field(default=20, ge=0, le=500)
+    fasting_goal_hours: int = Field(default=23, ge=0, le=24)
     api_key: str = ""
 
 
@@ -60,17 +60,17 @@ class MealLog(BaseModel):
     date: str
     meal_name: str = ""
     meal_description: str
-    calories: Optional[float] = None
-    protein_g: Optional[float] = None
-    fat_g: Optional[float] = None
-    carbs_g: Optional[float] = None
-    fiber_g: Optional[float] = None
+    calories: Optional[float] = Field(default=None, ge=0)
+    protein_g: Optional[float] = Field(default=None, ge=0)
+    fat_g: Optional[float] = Field(default=None, ge=0)
+    carbs_g: Optional[float] = Field(default=None, ge=0)
+    fiber_g: Optional[float] = Field(default=None, ge=0)
     notes: Optional[str] = None
 
 
 class WeightEntry(BaseModel):
     date: str
-    weight_kg: float
+    weight_kg: float = Field(ge=1, le=500)
     notes: Optional[str] = None
 
 
@@ -88,6 +88,7 @@ class DailyLog(BaseModel):
     magnesium_mg: int = 0
     symptoms: list[str] = []
     exercises: list[Exercise] = []
+    fasting_log: list = []
 
 
 class SymptomsRequest(BaseModel):

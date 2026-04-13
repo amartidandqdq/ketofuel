@@ -3,12 +3,15 @@
 # Exercise types and their ketosis impact (bonus days per session)
 EXERCISE_IMPACTS = {
     "walk_30": {"name": "30-min Walk", "icon": "\U0001f6b6", "bonus": 0.5, "minutes": 30, "max_daily": 3},
+    "hiit": {"name": "HIIT Session", "icon": "\U0001f525", "bonus": 1.2, "minutes": 25, "max_daily": 1, "cap_reason": "recovery needed"},
+    "weight_train": {"name": "Weight Training", "icon": "\U0001f3cb\ufe0f", "bonus": 0.8, "minutes": 50, "max_daily": 1, "cap_reason": "recovery needed"},
+    "swim": {"name": "Swimming", "icon": "\U0001f3ca", "bonus": 0.7, "minutes": 35, "max_daily": 2},
     "fat_fast": {"name": "Fat Fast Day", "icon": "\U0001f9c8", "bonus": 2.0, "minutes": 0, "max_daily": 1},
-    "espresso": {"name": "Black Espresso", "icon": "\u2615", "bonus": 0.15, "minutes": 0, "max_daily": 4},
+    "espresso": {"name": "Black Espresso", "icon": "\u2615", "bonus": 0.15, "minutes": 0, "max_daily": 4, "cap_reason": "400mg caffeine limit"},
 }
 
-# POURQUOI: Cap prevents gaming the system — biological adaptation has a ceiling per day
-DAILY_EXERCISE_BONUS_CAP = 2.0
+# POURQUOI: Cap prevents gaming — 3.0 allows realistic active days (HIIT+weights+swim=2.7) while capping extremes
+DAILY_EXERCISE_BONUS_CAP = 3.0
 
 # Protein targets per kg of lean body mass, by activity level (for muscle preservation)
 # POURQUOI: Keto diets risk muscle loss if protein is inadequate — higher protein than standard diets

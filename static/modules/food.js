@@ -104,6 +104,44 @@ async function relogFavorite(fav) {
     catch (e) { toast(e.message, 'error'); }
 }
 
+export async function lookupBarcode() {
+    const code = document.getElementById('barcode-input').value.trim();
+    if (!code) { toast('Enter a barcode number', 'error'); return; }
+    const container = document.getElementById('barcode-result');
+    container.innerHTML = '<p class="text-muted">Looking up...</p>';
+    try {
+        const data = await api('/barcode/' + encodeURIComponent(code));
+        const n = data.nutrition || {};
+        const nc = Math.round(n.net_carbs_g || 0);
+        container.innerHTML = `<div style="margin-top:8px;padding:8px;background:var(--bg);border-radius:8px">
+            <div class="flex-between"><strong>${esc(data.name)}</strong>${data.nutriscore ? `<span class="net-badge">${data.nutriscore.toUpperCase()}</span>` : ''}</div>
+            <div class="food-item-macros" style="margin:6px 0"><span>${n.calories} kcal</span><span>${n.fat_g}g F</span><span>${n.protein_g}g P</span><span class="net-badge ${nc <= 5 ? 'ok' : 'warn'}">${nc}g NC</span></div>
+            <button class="btn btn-sm btn-primary" onclick="addFoodToMeal('${esc(data.name).replace(/'/g, "\\\\'")}',${n.calories},${n.fat_g},${n.protein_g},${n.carbs_g},${n.fiber_g})">Add to Meal</button>
+        </div>`;
+    } catch (e) { container.innerHTML = '<p class="text-muted">Product not found</p>'; }
+}
+
+export async function searchOpenFoodFacts() {
+    const q = document.getElementById('off-search').value.trim();
+    if (!q || q.length < 2) { toast('Enter at least 2 characters', 'error'); return; }
+    const container = document.getElementById('off-results');
+    container.innerHTML = '<p class="text-muted">Searching...</p>';
+    try {
+        const data = await api('/food-search?q=' + encodeURIComponent(q));
+        if (!data.products?.length) { container.innerHTML = '<p class="text-muted">No results found</p>'; return; }
+        container.innerHTML = data.products.map(p => {
+            const n = p.nutrition || {};
+            const nc = Math.round(n.net_carbs_g || 0);
+            const fid = storeData({ name: p.name, cal: n.calories, fat: n.fat_g, protein: n.protein_g, carbs: n.carbs_g, fiber: n.fiber_g });
+            return `<div class="food-item" onclick="addFoodFromStore('${fid}')" style="cursor:pointer">
+                <div class="food-item-name">${esc(p.name)}</div>
+                <div class="food-item-meta">per 100g · <span class="net-badge ${nc <= 5 ? 'ok' : 'warn'}">${nc}g NC</span></div>
+                <div class="food-item-macros"><span>${n.calories} kcal</span><span>${n.fat_g}g F</span><span>${n.protein_g}g P</span><span>${n.carbs_g}g C</span></div>
+            </div>`;
+        }).join('');
+    } catch (e) { container.innerHTML = '<p class="text-muted">Search failed</p>'; }
+}
+
 export async function scanLabel() {
     const fileInput = document.getElementById('label-photo');
     const grams = document.getElementById('label-grams').value;

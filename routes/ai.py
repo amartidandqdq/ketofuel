@@ -3,8 +3,12 @@
 import base64
 import logging
 
-from fastapi import APIRouter, File, Form, UploadFile
+from fastapi import APIRouter, File, Form, Request, UploadFile
 from fastapi.responses import JSONResponse
+from slowapi import Limiter
+from slowapi.util import get_remote_address
+
+limiter = Limiter(key_func=get_remote_address)
 
 from ai_client import AIClient
 from logger import dlog
@@ -22,7 +26,8 @@ ALLOWED_IMAGE_TYPES = {"image/jpeg", "image/png", "image/webp", "image/gif"}
 
 
 @router.post("/generate-plan")
-async def generate_plan(req: MealPlanRequest):
+@limiter.limit("5/minute")
+async def generate_plan(request: Request, req: MealPlanRequest):
     try:
         profile = db.get_profile()
         result = await ai.generate_meal_plan(profile, req.days, req.preferences or "")
@@ -36,7 +41,8 @@ async def generate_plan(req: MealPlanRequest):
 
 
 @router.post("/suggest-recipes")
-async def suggest_recipes(req: RecipeRequest):
+@limiter.limit("5/minute")
+async def suggest_recipes(request: Request, req: RecipeRequest):
     try:
         profile = db.get_profile()
         result = await ai.suggest_recipes(profile, req.ingredients, req.max_recipes, req.preferences or "")
@@ -49,7 +55,8 @@ async def suggest_recipes(req: RecipeRequest):
 
 
 @router.post("/analyze")
-async def analyze_meal(req: AnalyzeRequest):
+@limiter.limit("10/minute")
+async def analyze_meal(request: Request, req: AnalyzeRequest):
     try:
         profile = db.get_profile()
         result = await ai.analyze_nutrition(profile, req.meal_description)
@@ -62,7 +69,8 @@ async def analyze_meal(req: AnalyzeRequest):
 
 
 @router.post("/scan-label")
-async def scan_label(image: UploadFile = File(...), grams: float = Form(default=None)):
+@limiter.limit("5/minute")
+async def scan_label(request: Request, image: UploadFile = File(...), grams: float = Form(default=None)):
     try:
         if image.content_type not in ALLOWED_IMAGE_TYPES:
             return JSONResponse(status_code=400, content={"error": f"Unsupported image type: {image.content_type}. Use JPEG, PNG, WebP, or GIF."})

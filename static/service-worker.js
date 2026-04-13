@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ketofuel-v2';
+const CACHE_NAME = 'ketofuel-v4';
 const STATIC_ASSETS = [
     '/', '/static/app.js', '/static/style.css',
     '/static/modules/core.js', '/static/modules/fasting.js', '/static/modules/dashboard.js',

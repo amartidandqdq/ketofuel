@@ -1,21 +1,23 @@
 // KetoFuel — ES module entry point. Imports all modules and assigns to window for onclick handlers.
 
 import { state, storeData, getData, api, toast, toastUndo, setLoading, esc, truncate } from './modules/core.js';
-import { startFast, breakFast, startFastingTicker, updateFastingUI } from './modules/fasting.js';
+import { startFast, breakFast, startFastingTicker, updateFastingUI, loadFastingHistory } from './modules/fasting.js';
 import { loadDashboard, loadProteinStatus, renderMacroDonut } from './modules/dashboard.js';
 import { generatePlan, logFromPlanStore, toggleSection, setupTagInput, renderTags, removeTag, findRecipes,
-         analyzeMeal, applyAnalysisStore, updateNetCarbs, logMeal, loadMeals, deleteMeal } from './modules/meals.js';
+         analyzeMeal, applyAnalysisStore, updateNetCarbs, logMeal, loadMeals, deleteMeal,
+         loadSavedPlans, savePlanFromStore } from './modules/meals.js';
 import { logWeight, loadWeights, deleteWeight, loadDeficitSlider, onDeficitSlide,
          applySliderCalories, getWeightInsight } from './modules/weight.js';
 import { addWater, removeWater, showElectroForm, saveElectrolytes, loadDailyTrackers,
          toggleFluChecker, setupSymptomButtons, checkKetoFlu } from './modules/trackers.js';
 import { loadFoodDB, searchFoodDB, addFoodFromStore, addFoodToMeal, setIF, highlightActiveIF,
-         saveGroceryListFromStore, loadFavorites, relogFavoriteStore, scanLabel, applyScanStore } from './modules/food.js';
+         saveGroceryListFromStore, loadFavorites, relogFavoriteStore, scanLabel, applyScanStore,
+         lookupBarcode, searchOpenFoodFacts } from './modules/food.js';
 import { loadKetosisTracker, renderKetoPresets, selectKetoPreset, updateKetoModeBadge,
          loadExerciseButtons, renderExerciseGrid, logExercise, removeExercise, clearExercises,
          loadTodayExercises } from './modules/ketosis.js';
 import { loadSettings, saveSettings } from './modules/settings.js';
-import { loadBodyComp, loadAchievements, showDaySnapshot, toggleTheme, loadTheme } from './modules/progress.js';
+import { loadBodyComp, loadAchievements, showDaySnapshot, toggleTheme, loadTheme, loadMacroTrends, loadComplianceStreaks, importBackup, shareAchievements, setupPWAInstall, installPWA, dismissPWA } from './modules/progress.js';
 
 // --- Assign all onclick-accessible functions to window ---
 Object.assign(window, {
@@ -24,12 +26,12 @@ Object.assign(window, {
     // Nav
     switchTab, switchSubTab,
     // Fasting
-    startFast, breakFast,
+    startFast, breakFast, loadFastingHistory,
     // Dashboard
     loadDashboard,
     // Meals
     generatePlan, logFromPlanStore, toggleSection, renderTags, removeTag, findRecipes,
-    analyzeMeal, applyAnalysisStore, updateNetCarbs, logMeal, loadMeals, deleteMeal,
+    analyzeMeal, applyAnalysisStore, updateNetCarbs, logMeal, loadMeals, deleteMeal, loadSavedPlans, savePlanFromStore,
     // Weight
     logWeight, loadWeights, deleteWeight, applySliderCalories, getWeightInsight, onDeficitSlide,
     // Trackers
@@ -37,14 +39,14 @@ Object.assign(window, {
     toggleFluChecker, checkKetoFlu,
     // Food
     loadFoodDB, searchFoodDB, addFoodFromStore, addFoodToMeal, setIF, highlightActiveIF,
-    saveGroceryListFromStore, loadFavorites, relogFavoriteStore, scanLabel, applyScanStore,
+    saveGroceryListFromStore, loadFavorites, relogFavoriteStore, scanLabel, applyScanStore, lookupBarcode, searchOpenFoodFacts,
     // Ketosis
     loadKetosisTracker, renderKetoPresets, selectKetoPreset, updateKetoModeBadge,
     logExercise, removeExercise, clearExercises, loadExerciseButtons, loadTodayExercises,
     // Settings
     loadSettings, saveSettings,
     // Progress
-    loadBodyComp, loadAchievements, showDaySnapshot, toggleTheme,
+    loadBodyComp, loadAchievements, showDaySnapshot, toggleTheme, loadMacroTrends, loadComplianceStreaks, importBackup, shareAchievements, installPWA, dismissPWA,
 });
 
 // --- Navigation ---
@@ -55,8 +57,8 @@ function switchTab(tab) {
     document.querySelector(`[data-tab="${tab}"]`)?.classList.add('active');
 
     if (tab === 'today') loadDashboard();
-    if (tab === 'meals') loadFavorites();
-    if (tab === 'progress') { loadWeights(); loadMeals(); loadAchievements(); loadBodyComp(); }
+    if (tab === 'meals') { loadFavorites(); loadSavedPlans(); }
+    if (tab === 'progress') { loadWeights(); loadMeals(); loadAchievements(); loadBodyComp(); loadMacroTrends(); loadComplianceStreaks(); }
     if (tab === 'settings') loadSettings();
 }
 
@@ -101,4 +103,5 @@ document.addEventListener('DOMContentLoaded', () => {
 
     loadDashboard();
     loadFavorites();
+    setupPWAInstall();
 });

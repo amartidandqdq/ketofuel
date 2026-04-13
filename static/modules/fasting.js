@@ -1,5 +1,5 @@
 // Fasting timer — start, break, UI, ticker
-import { state, toast } from './core.js';
+import { api, state, toast } from './core.js';
 
 let fastingInterval = null;
 
@@ -7,14 +7,31 @@ export function startFast() {
     state.fastStart = Date.now();
     localStorage.setItem('fastStart', state.fastStart);
     updateFastingUI();
+    api('/fasting-log?start_ts=' + state.fastStart, { method: 'POST' }).catch(() => {});
     toast('Fast started!');
 }
 
 export function breakFast() {
+    const endTs = Date.now();
+    api('/fasting-log?end_ts=' + endTs, { method: 'POST' }).then(() => loadFastingHistory()).catch(() => {});
     state.fastStart = null;
     localStorage.removeItem('fastStart');
     updateFastingUI();
     toast('Fast broken — enjoy your OMAD!');
+}
+
+export async function loadFastingHistory() {
+    try {
+        const data = await api('/fasting-history?days=7');
+        const container = document.getElementById('fasting-history');
+        if (!container || !data.history?.length) { if (container) container.innerHTML = ''; return; }
+        container.innerHTML = data.history.slice(0, 5).map(h => {
+            const start = new Date(h.start);
+            const timeStr = start.toLocaleDateString(undefined, { weekday: 'short' }) + ' ' +
+                start.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+            return `<div class="fasting-history-item"><span>${timeStr}</span><span class="fasting-duration">${h.duration_h}h</span></div>`;
+        }).join('');
+    } catch (e) { console.error('Fasting history error:', e); }
 }
 
 export function updateFastingUI() {

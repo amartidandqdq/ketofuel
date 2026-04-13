@@ -50,6 +50,8 @@ function renderPlan(plan) {
     if (plan.tips?.length) {
         container.innerHTML += `<div class="plan-tips"><h4>Tips</h4><ul>${plan.tips.map(t => `<li>${esc(t)}</li>`).join('')}</ul></div>`;
     }
+    const planId = storeData(plan);
+    container.innerHTML += `<button class="btn btn-primary" style="margin-top:12px" onclick="savePlanFromStore('${planId}')">Save This Plan</button>`;
 }
 
 function renderMealCard(meal, dayNum) {
@@ -69,6 +71,29 @@ function renderMealCard(meal, dayNum) {
             <span><span class="macro-dot carbs"></span>${Math.round(n.carbs_g || 0)}g C</span>
         </div>
     </div>`;
+}
+
+export async function loadSavedPlans() {
+    try {
+        const plans = await api('/plans');
+        const container = document.getElementById('saved-plans');
+        if (!container) return;
+        if (!plans?.length) { container.innerHTML = '<p class="text-muted">No saved plans yet</p>'; return; }
+        container.innerHTML = plans.map(p => {
+            const dayCount = p.days?.length || 0;
+            const savedDate = p.saved_at ? new Date(p.saved_at).toLocaleDateString() : '';
+            return `<div class="saved-plan-item"><div class="flex-between"><strong>${esc(p.plan_name || dayCount + '-day plan')}</strong><span class="text-muted" style="font-size:11px">${savedDate}</span></div><div class="text-muted" style="font-size:12px">${dayCount} day${dayCount > 1 ? 's' : ''}</div></div>`;
+        }).join('');
+    } catch (e) { console.error('Saved plans error:', e); }
+}
+
+export function savePlanFromStore(dataId) { savePlanData(getData(dataId)); }
+async function savePlanData(plan) {
+    try {
+        await api('/plans', { method: 'POST', body: JSON.stringify({ plan_name: plan.plan_name || 'OMAD Plan', days: plan.days || [], shopping_list: plan.shopping_list || [], tips: plan.tips || [] }) });
+        toast('Plan saved!');
+        loadSavedPlans();
+    } catch (e) { toast(e.message, 'error'); }
 }
 
 export function toggleSection(id) {

@@ -2,9 +2,10 @@
 
 import csv
 import io
+import json
 from datetime import date, datetime, timedelta
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse, StreamingResponse
 
 from keto_data import PROTEIN_PER_KG_LEAN
@@ -185,6 +186,55 @@ async def daily_snapshot(target_date: str):
     meals_resp = db.get_meals(target_date)
     meals = meals_resp["meals"] if isinstance(meals_resp, dict) else meals_resp
     return {"date": target_date, "stats": stats, "meals": meals, "daily_log": db.get_daily_log(target_date)}
+
+
+@router.get("/compliance-streaks")
+async def compliance_streaks():
+    """Net carb compliance data for the last 14 days for streak visualization."""
+    streak = db.get_streak()
+    today = date.today()
+    dates = [(today - timedelta(days=i)).isoformat() for i in range(14)]
+    bulk = db.get_bulk_daily_stats(dates)
+    profile = db.get_profile()
+    carb_limit = profile.get("net_carb_limit", 20)
+
+    days = []
+    for d in reversed(dates):
+        s = bulk.get(d, {})
+        mc = s.get("meal_count", 0)
+        net = max(0, (s.get("carbs_g", 0) or 0) - (s.get("fiber_g", 0) or 0))
+        days.append({"date": d, "compliant": mc > 0 and net <= carb_limit, "net_carbs": round(net, 1), "has_meals": mc > 0})
+
+    return {"days": days, "current_streak": streak["current_streak"],
+            "longest_streak": streak["longest_streak"], "carb_limit": carb_limit}
+
+
+@router.get("/macro-trends")
+async def macro_trends(days: int = 7):
+    """Rolling macro averages and daily breakdown for trend charts."""
+    today = date.today()
+    dates = [(today - timedelta(days=i)).isoformat() for i in range(days)]
+    bulk = db.get_bulk_daily_stats(dates)
+    profile = db.get_profile()
+    carb_limit = profile.get("net_carb_limit", 20)
+
+    trend = []
+    for d in reversed(dates):
+        s = bulk.get(d, {})
+        net = max(0, (s.get("carbs_g", 0) or 0) - (s.get("fiber_g", 0) or 0))
+        trend.append({"date": d, "calories": round(s.get("calories", 0) or 0),
+                       "protein_g": round(s.get("protein_g", 0) or 0, 1),
+                       "fat_g": round(s.get("fat_g", 0) or 0, 1),
+                       "net_carbs_g": round(net, 1), "meal_count": s.get("meal_count", 0)})
+
+    with_meals = [t for t in trend if t["meal_count"] > 0]
+    n = len(with_meals) or 1
+    avg = {"calories": round(sum(t["calories"] for t in with_meals) / n),
+           "protein_g": round(sum(t["protein_g"] for t in with_meals) / n, 1),
+           "fat_g": round(sum(t["fat_g"] for t in with_meals) / n, 1),
+           "net_carbs_g": round(sum(t["net_carbs_g"] for t in with_meals) / n, 1)}
+
+    return {"trend": trend, "averages": avg, "carb_limit": carb_limit, "days": days}
 
 
 @router.get("/export")
