@@ -107,7 +107,7 @@ export function logFromPlanStore(dataId) {
 async function logFromPlan(meal) {
     const n = meal.nutrition || {};
     const entry = {
-        date: new Date().toISOString().split('T')[0],
+        date: document.getElementById('meal-date')?.value || new Date().toISOString().split('T')[0],
         meal_name: meal.name,
         meal_description: meal.description || meal.name,
         calories: n.calories || null, protein_g: n.protein_g || null,
@@ -288,6 +288,7 @@ export async function loadMeals(append = false) {
         const resp = await api(url);
         const meals = resp.meals || [];
         const total = resp.total || 0;
+        _lastLoadedMeals = append ? _lastLoadedMeals.concat(meals) : meals;
         if (!meals.length && !append) { container.innerHTML = '<p class="text-muted">No meals logged</p>'; return; }
         const html = meals.map(m => `
             <div class="meal-history-item">
@@ -300,8 +301,8 @@ export async function loadMeals(append = false) {
                     ${m.fat_g ? `<span><span class="macro-dot fat"></span>${Math.round(m.fat_g)}g F</span>` : ''}
                     ${m.protein_g ? `<span><span class="macro-dot protein"></span>${Math.round(m.protein_g)}g P</span>` : ''}
                     ${m.carbs_g ? `<span><span class="macro-dot carbs"></span>${Math.round(Math.max(0, (m.carbs_g||0) - (m.fiber_g||0)))}g NC</span>` : ''}
-                    <button class="btn-delete" onclick="deleteMeal('${m.id}')" title="Delete">&times;</button>
                 </div>
+                <button class="btn-delete" onclick="deleteMeal('${m.id}')" title="Supprimer">&times;</button>
             </div>
         `).join('');
         if (append) { container.querySelector('.load-more-btn')?.remove(); container.insertAdjacentHTML('beforeend', html); }
@@ -315,11 +316,15 @@ export async function loadMeals(append = false) {
     } catch (e) { console.error('Load meals error:', e); }
 }
 
+// POURQUOI: Cache last loaded meals for undo without re-fetching all meals
+let _lastLoadedMeals = [];
+export function _setLastLoadedMeals(meals) { _lastLoadedMeals = meals; }
+
 export async function deleteMeal(id) {
     if (!confirm('Delete this meal entry?')) return;
     try {
-        const allMeals = (await api('/meals')).meals || [];
-        const stashed = allMeals.find(m => m.id === id);
+        // Use cached meals from last render instead of fetching all
+        const stashed = _lastLoadedMeals.find(m => m.id === id);
         await api(`/meals/${id}`, { method: 'DELETE' });
         window.loadMeals?.();
         window.loadDashboard?.();

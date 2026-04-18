@@ -6,7 +6,6 @@ from fastapi import APIRouter
 
 from keto_data import (KETOSIS_TIMELINES, KETOSIS_ACCELERATORS, SPEED_TIPS,
                        _DIET_TIMELINE_MAP, _NON_KETO_DIETS, DAILY_EXERCISE_BONUS_CAP)
-import storage
 from storage import Storage
 
 router = APIRouter(prefix="/api")
@@ -82,7 +81,7 @@ async def ketosis_state():
             break
 
     # Exercise bonus (single file read, capped per day)
-    all_daily_logs = storage._read_json("daily_logs.json", {})
+    all_daily_logs = db.get_all_daily_logs()
     exercise_bonus = 0
     for d in dates:
         day_bonus = sum(ex.get("bonus_days", 0) for ex in all_daily_logs.get(d, {}).get("exercises", []))

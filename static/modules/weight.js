@@ -2,6 +2,7 @@
 import { api, esc, toast, toastUndo, setLoading } from './core.js';
 
 let deficitData = null;
+let _lastLoadedWeights = [];
 
 export async function logWeight() {
     const dateVal = document.getElementById('weight-date').value;
@@ -22,6 +23,7 @@ export async function logWeight() {
 export async function loadWeights() {
     try {
         const weights = await api('/weight?limit=30');
+        _lastLoadedWeights = weights;
         renderWeightChart(weights);
         renderWeightHistory(weights);
         loadDeficitSlider();
@@ -75,8 +77,8 @@ function renderWeightHistory(weights) {
 export async function deleteWeight(d) {
     if (!confirm('Delete this weight entry?')) return;
     try {
-        const weights = await api('/weight?limit=100');
-        const stashed = weights.find(w => w.date === d);
+        // Use cached weights from last render instead of re-fetching
+        const stashed = _lastLoadedWeights.find(w => w.date === d);
         await api(`/weight/${d}`, { method: 'DELETE' });
         loadWeights();
         if (stashed) {

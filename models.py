@@ -1,6 +1,15 @@
-from pydantic import BaseModel, Field
+from datetime import date as _date
+from pydantic import BaseModel, Field, field_validator
 from typing import Optional
 from enum import Enum
+
+
+def _validate_iso_date(v: str) -> str:
+    """Validate YYYY-MM-DD format. Empty string is allowed for optional dates."""
+    if not v:
+        return v
+    _date.fromisoformat(v)  # raises ValueError if invalid
+    return v
 
 
 class DietType(str, Enum):
@@ -67,11 +76,21 @@ class MealLog(BaseModel):
     fiber_g: Optional[float] = Field(default=None, ge=0)
     notes: Optional[str] = None
 
+    @field_validator("date")
+    @classmethod
+    def check_date(cls, v):
+        return _validate_iso_date(v)
+
 
 class WeightEntry(BaseModel):
     date: str
     weight_kg: float = Field(ge=1, le=500)
     notes: Optional[str] = None
+
+    @field_validator("date")
+    @classmethod
+    def check_date(cls, v):
+        return _validate_iso_date(v)
 
 
 class Exercise(BaseModel):
@@ -83,6 +102,11 @@ class Exercise(BaseModel):
 class DailyLog(BaseModel):
     date: str
     water_glasses: int = 0
+
+    @field_validator("date")
+    @classmethod
+    def check_date(cls, v):
+        return _validate_iso_date(v)
     sodium_mg: int = 0
     potassium_mg: int = 0
     magnesium_mg: int = 0

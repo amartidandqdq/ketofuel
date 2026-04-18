@@ -4,11 +4,27 @@ import { api, state, toast } from './core.js';
 let fastingInterval = null;
 
 export function startFast() {
-    state.fastStart = Date.now();
+    // POURQUOI: Permet de saisir rétroactivement l'heure de fin de repas
+    const timeInput = document.getElementById('fast-custom-time');
+    const customTime = timeInput?.value;
+    if (customTime) {
+        const [h, m] = customTime.split(':').map(Number);
+        const d = new Date();
+        d.setHours(h, m, 0, 0);
+        // Si l'heure saisie est dans le futur, c'est hier soir
+        if (d.getTime() > Date.now()) d.setDate(d.getDate() - 1);
+        const ts = d.getTime();
+        // POURQUOI: Prevent NaN from corrupting localStorage if time input is invalid
+        if (!Number.isFinite(ts)) { toast('Invalid time', 'error'); return; }
+        state.fastStart = ts;
+        timeInput.value = '';
+    } else {
+        state.fastStart = Date.now();
+    }
     localStorage.setItem('fastStart', state.fastStart);
     updateFastingUI();
     api('/fasting-log?start_ts=' + state.fastStart, { method: 'POST' }).catch(() => {});
-    toast('Fast started!');
+    toast(customTime ? `Jeûne démarré à ${customTime}` : 'Fast started!');
 }
 
 export function breakFast() {
@@ -38,6 +54,7 @@ export function updateFastingUI() {
     const badge = document.getElementById('fasting-status');
     const bar = document.getElementById('fasting-bar');
     const elapsed = document.getElementById('fast-elapsed');
+    if (!badge || !bar || !elapsed) return;
 
     if (!state.fastStart) {
         badge.textContent = 'Not fasting';

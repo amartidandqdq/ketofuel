@@ -1,9 +1,15 @@
 import json
+import logging
 import os
+import tempfile
 import uuid
 from datetime import datetime, date, timedelta
 from config import DATA_DIR
+from errors import E
+from logger import dlog
 from models import UserProfile, MealLog, WeightEntry, DailyLog, GroceryList
+
+_log = logging.getLogger(__name__)
 
 
 def _path(filename: str) -> str:
@@ -15,13 +21,49 @@ def _read_json(filename: str, default=None):
     path = _path(filename)
     if not os.path.exists(path):
         return default if default is not None else {}
-    with open(path, "r") as f:
-        return json.load(f)
+    try:
+        with open(path, "r") as f:
+            return json.load(f)
+    except (json.JSONDecodeError, UnicodeDecodeError) as e:
+        # POURQUOI: STORAGE_002 — corrupt file backed up to .corrupt; app uses default to stay alive
+        dlog.error("storage", E["STORAGE_002"]["msg"], {
+            "code": "STORAGE_002", "action": f"read {filename}",
+            "fix": E["STORAGE_002"]["fix"], "error": str(e), "path": path,
+        })
+        backup = path + ".corrupt"
+        try:
+            os.replace(path, backup)
+        except OSError as oe:
+            dlog.warn("storage", "Could not move corrupt file aside", {
+                "code": "STORAGE_001", "fix": E["STORAGE_001"]["fix"], "error": str(oe),
+            })
+        return default if default is not None else {}
+    except OSError as e:
+        dlog.error("storage", E["STORAGE_001"]["msg"], {
+            "code": "STORAGE_001", "action": f"read {filename}",
+            "fix": E["STORAGE_001"]["fix"], "error": str(e), "path": path,
+        })
+        return default if default is not None else {}
 
 
 def _write_json(filename: str, data):
-    with open(_path(filename), "w") as f:
-        json.dump(data, f, indent=2, default=str)
+    # POURQUOI: Atomic write — temp file + os.replace prevents data corruption on crash
+    path = _path(filename)
+    fd, tmp = tempfile.mkstemp(dir=os.path.dirname(path), suffix=".tmp")
+    try:
+        with os.fdopen(fd, "w") as f:
+            json.dump(data, f, indent=2, default=str)
+        os.replace(tmp, path)
+    except BaseException as e:
+        try:
+            os.unlink(tmp)
+        except OSError:
+            pass
+        dlog.error("storage", E["STORAGE_003"]["msg"], {
+            "code": "STORAGE_003", "action": f"write {filename}",
+            "fix": E["STORAGE_003"]["fix"], "error": str(e), "path": path,
+        })
+        raise
 
 
 class Storage:
@@ -41,7 +83,7 @@ class Storage:
     def log_meal(self, meal: MealLog) -> dict:
         meals = _read_json("meals.json", [])
         entry = meal.model_dump()
-        entry["id"] = str(uuid.uuid4())[:8]
+        entry["id"] = str(uuid.uuid4())[:12]
         entry["logged_at"] = datetime.now().isoformat()
         meals.append(entry)
         _write_json("meals.json", meals)
@@ -196,7 +238,7 @@ class Storage:
     def save_grocery_list(self, grocery: GroceryList) -> dict:
         lists = _read_json("grocery_lists.json", [])
         entry = grocery.model_dump()
-        entry["id"] = str(uuid.uuid4())[:8]
+        entry["id"] = str(uuid.uuid4())[:12]
         entry["saved_at"] = datetime.now().isoformat()
         lists.append(entry)
         _write_json("grocery_lists.json", lists)
@@ -233,7 +275,7 @@ class Storage:
     # Saved plans
     def save_plan(self, plan: dict) -> dict:
         plans = _read_json("plans.json", [])
-        plan["id"] = str(uuid.uuid4())[:8]
+        plan["id"] = str(uuid.uuid4())[:12]
         plan["saved_at"] = datetime.now().isoformat()
         plans.append(plan)
         _write_json("plans.json", plans)
@@ -242,6 +284,12 @@ class Storage:
     def get_plans(self, limit: int = 10) -> list:
         plans = _read_json("plans.json", [])
         return sorted(plans, key=lambda p: p.get("saved_at", ""), reverse=True)[:limit]
+
+    def get_all_daily_logs(self) -> dict:
+        return _read_json("daily_logs.json", {})
+
+    def count_meals(self) -> int:
+        return len(_read_json("meals.json", []))
 
     def export_all(self) -> dict:
         return {
