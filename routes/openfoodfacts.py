@@ -1,5 +1,6 @@
 # POURQUOI: Open Food Facts integration — barcode lookup and food search from public database.
 
+import re
 import httpx
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
@@ -42,6 +43,9 @@ def _extract_nutrition(product: dict) -> dict:
 @router.get("/barcode/{code}")
 async def barcode_lookup(code: str):
     """Look up a product by barcode via Open Food Facts."""
+    # POURQUOI: Validate barcode format to prevent path traversal / SSRF
+    if not re.match(r"^\d{8,14}$", code):
+        return JSONResponse(status_code=400, content={"error": "Invalid barcode format. Must be 8-14 digits."})
     try:
         async with httpx.AsyncClient(timeout=TIMEOUT) as client:
             r = await client.get(f"{OFF_API}/api/v2/product/{code}.json",
@@ -64,7 +68,7 @@ async def food_search(q: str = "", page: int = 1, page_size: int = 12):
     try:
         async with httpx.AsyncClient(timeout=TIMEOUT) as client:
             r = await client.get(OFF_SEARCH, params={
-                "search_terms": q, "json": 1, "page": page, "page_size": page_size,
+                "search_terms": q, "json": 1, "page": page, "page_size": page_size, "cc": "fr",
                 "fields": "code,product_name,brands,nutriments,serving_size,image_front_small_url,nutriscore_grade,categories",
             }, headers={"User-Agent": "KetoFuel/1.0"})
         if r.status_code != 200:

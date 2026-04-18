@@ -7,3 +7,9 @@ venv/
 .DS_Store
 logs/*.log
 backups/
+# session/agent artifacts (local only)
+.agents/
+.claude/skills/
+CC-Session-Logs/
+PROMPT_MAITRE_V2.md
+skills-lock.json

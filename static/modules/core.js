@@ -21,6 +21,11 @@ export function storeData(data) {
 export function getData(id) {
     return _dataStore[id];
 }
+// POURQUOI: Prevent unbounded memory growth in long PWA sessions
+export function clearDataStore() {
+    for (const key in _dataStore) delete _dataStore[key];
+    _dataId = 0;
+}
 
 // --- API + Offline ---
 let _serverOnline = true;
@@ -47,8 +52,10 @@ function _hideOfflineBanner() {
 
 export async function api(path, opts = {}) {
     try {
+        // POURQUOI: Don't set Content-Type for FormData — browser sets multipart boundary automatically
+        const headers = opts.body instanceof FormData ? { ...opts.headers } : { 'Content-Type': 'application/json', ...opts.headers };
         const res = await fetch(`/api${path}`, {
-            headers: { 'Content-Type': 'application/json', ...opts.headers },
+            headers,
             ...opts,
         });
         if (!_serverOnline) _hideOfflineBanner();

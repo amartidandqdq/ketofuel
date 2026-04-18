@@ -1,9 +1,27 @@
+import asyncio
 import json
+import base64
 import logging
-from openai import AsyncOpenAI
-from config import OPENAI_API_KEY, OPENAI_MODEL, OPENAI_BASE_URL
+from typing import Optional
+from google import genai
+from google.genai import types
+from config import GEMINI_API_KEY, GEMINI_MODEL
+from errors import E
+from logger import dlog
+
+GEMINI_TIMEOUT = 30  # seconds
 
 log = logging.getLogger(__name__)
+
+
+class AIError(Exception):
+    """Gemini failure tagged with errors.py code."""
+    def __init__(self, code: str, original: Optional[Exception] = None):
+        self.code = code
+        self.original = original
+        meta = E.get(code, {"msg": code, "fix": ""})
+        self.fix = meta["fix"]
+        super().__init__(meta["msg"])
 
 DIET_DESCRIPTIONS = {
     "carnivore": "Carnivore - zero carb, meat/fish/eggs only, no plant foods",
@@ -60,49 +78,72 @@ def _build_profile_context(profile: dict) -> str:
     return "\n".join(lines)
 
 
-def _get_client(api_key: str = "") -> AsyncOpenAI:
-    key = api_key or OPENAI_API_KEY
+def _get_client(api_key: str = "") -> genai.Client:
+    key = api_key or GEMINI_API_KEY
     if not key:
-        raise ValueError("No API key configured. Set it in Settings or in the .env file.")
-    return AsyncOpenAI(api_key=key, base_url=OPENAI_BASE_URL)
+        # POURQUOI: AI_001 — caller catches AIError and converts to 503/400 with fix
+        raise AIError("AI_001")
+    return genai.Client(api_key=key)
 
 
 async def _chat(api_key: str, system: str, user: str, temperature: float = 0.7) -> str:
     client = _get_client(api_key)
-    resp = await client.chat.completions.create(
-        model=OPENAI_MODEL,
-        messages=[
-            {"role": "system", "content": system},
-            {"role": "user", "content": user},
-        ],
-        temperature=temperature,
-        response_format={"type": "json_object"},
-    )
-    return resp.choices[0].message.content
+    try:
+        resp = await asyncio.wait_for(
+            client.aio.models.generate_content(
+                model=GEMINI_MODEL,
+                contents=f"{system}\n\n{user}",
+                config=types.GenerateContentConfig(
+                    temperature=temperature,
+                    response_mime_type="application/json",
+                ),
+            ),
+            timeout=GEMINI_TIMEOUT,
+        )
+    except asyncio.TimeoutError as e:
+        raise AIError("AI_002", e)
+    return resp.text
 
 
 async def _chat_text(api_key: str, system: str, user: str, temperature: float = 0.7) -> str:
     client = _get_client(api_key)
-    resp = await client.chat.completions.create(
-        model=OPENAI_MODEL,
-        messages=[
-            {"role": "system", "content": system},
-            {"role": "user", "content": user},
-        ],
-        temperature=temperature,
-    )
-    return resp.choices[0].message.content
+    try:
+        resp = await asyncio.wait_for(
+            client.aio.models.generate_content(
+                model=GEMINI_MODEL,
+                contents=f"{system}\n\n{user}",
+                config=types.GenerateContentConfig(
+                    temperature=temperature,
+                ),
+            ),
+            timeout=GEMINI_TIMEOUT,
+        )
+    except asyncio.TimeoutError as e:
+        raise AIError("AI_002", e)
+    return resp.text
 
 
 def _parse_json(raw: str) -> dict:
+    # POURQUOI: Strip markdown code fences before parsing — Gemini sometimes wraps JSON
+    cleaned = raw.strip()
+    if cleaned.startswith("```"):
+        first_nl = cleaned.find("\n")
+        last_fence = cleaned.rfind("```", first_nl)
+        if last_fence > first_nl:
+            cleaned = cleaned[first_nl + 1:last_fence].strip()
     try:
-        return json.loads(raw)
-    except json.JSONDecodeError:
-        start = raw.find("{")
-        end = raw.rfind("}") + 1
-        if start >= 0 and end > start:
-            return json.loads(raw[start:end])
-        raise
+        return json.loads(cleaned)
+    except json.JSONDecodeError as first_err:
+        # Try extracting JSON object or array
+        for open_ch, close_ch in [("{", "}"), ("[", "]")]:
+            start = cleaned.find(open_ch)
+            end = cleaned.rfind(close_ch) + 1
+            if start >= 0 and end > start:
+                try:
+                    return json.loads(cleaned[start:end])
+                except json.JSONDecodeError:
+                    continue
+        raise AIError("AI_003", first_err)
 
 
 class AIClient:
@@ -230,10 +271,7 @@ Return valid JSON:
         serving_note = f"The user ate {serving_grams}g of this product. Scale the nutritional values accordingly." if serving_grams else "Extract the values as shown on the label."
 
         client = _get_client(profile.get("api_key", ""))
-        resp = await client.chat.completions.create(
-            model=OPENAI_MODEL,
-            messages=[
-                {"role": "system", "content": f"""You are a nutrition label OCR expert. Extract all nutritional information from this food label photo.
+        system = f"""You are a nutrition label OCR expert. Extract all nutritional information from this food label photo.
 
 User Profile:
 {ctx}
@@ -264,16 +302,31 @@ Return valid JSON:
   "raw_text": "OCR text extracted from the label"
 }}
 
-net_carbs_g = carbs_g - fiber_g. If the user specified a portion in grams, scale ALL values from the label's per-100g or per-serving to match the user's portion."""},
-                {"role": "user", "content": [
-                    {"type": "text", "text": "Extract nutritional info from this label:"},
-                    {"type": "image_url", "image_url": {"url": f"data:{mime_type};base64,{image_b64}"}}
-                ]}
-            ],
-            temperature=0.3,
-            response_format={"type": "json_object"},
-        )
-        return _parse_json(resp.choices[0].message.content)
+net_carbs_g = carbs_g - fiber_g. If the user specified a portion in grams, scale ALL values from the label's per-100g or per-serving to match the user's portion."""
+
+        # POURQUOI: Gemini vision accepts inline_data with raw bytes via Part
+        image_bytes = base64.b64decode(image_b64)
+        image_part = types.Part.from_bytes(data=image_bytes, mime_type=mime_type)
+
+        try:
+            resp = await asyncio.wait_for(
+                client.aio.models.generate_content(
+                    model=GEMINI_MODEL,
+                    contents=[system, "Extract nutritional info from this label:", image_part],
+                    config=types.GenerateContentConfig(
+                        temperature=0.3,
+                        response_mime_type="application/json",
+                    ),
+                ),
+                timeout=GEMINI_TIMEOUT,
+            )
+        except asyncio.TimeoutError as e:
+            raise AIError("AI_002", e)
+        except AIError:
+            raise
+        except Exception as e:
+            raise AIError("AI_005", e)
+        return _parse_json(resp.text)
 
     async def check_keto_flu(self, profile: dict, symptoms: list[str]) -> dict:
         ctx = _build_profile_context(profile)

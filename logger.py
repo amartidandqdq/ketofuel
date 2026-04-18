@@ -1,5 +1,6 @@
 # Structured diagnostic logger — writes JSON lines to logs/diagnostic.log
 # POURQUOI: Governance protocol requires structured logs as source of truth for debugging.
+# v4.2: Added error codes support and fix field for AI-readable diagnostics.
 
 import json
 import os
@@ -32,8 +33,21 @@ def _write(level: str, module: str, message: str, payload=None):
         "module": module,
         "message": message,
         "traceId": _trace_id,
-        **({"data": payload} if payload else {}),
     }
+
+    # POURQUOI: Structured payload with action/error/fix for AI-readable diagnostics
+    if payload:
+        if isinstance(payload, dict):
+            # Extract known structured fields to top level for easy grep
+            for key in ("code", "action", "fix"):
+                if key in payload:
+                    entry[key] = payload[key]
+            # Keep remaining data under "data" key
+            remaining = {k: v for k, v in payload.items() if k not in ("code", "action", "fix")}
+            if remaining:
+                entry["data"] = remaining
+        else:
+            entry["data"] = payload
 
     try:
         with open(LOG_FILE, "a") as f:
@@ -43,7 +57,12 @@ def _write(level: str, module: str, message: str, payload=None):
 
 
 class dlog:
-    """Diagnostic logger. Usage: dlog.info('module', '[INPUT] func', {data})"""
+    """Diagnostic logger.
+
+    Basic:    dlog.info('module', 'message')
+    Payload:  dlog.info('module', 'message', {"key": "val"})
+    Error:    dlog.error('module', 'AI_001', {"action": "generate_plan", "error": "timeout", "fix": "Retry"})
+    """
     info = staticmethod(lambda m, msg, p=None: _write("info", m, msg, p))
     warn = staticmethod(lambda m, msg, p=None: _write("warn", m, msg, p))
     error = staticmethod(lambda m, msg, p=None: _write("error", m, msg, p))

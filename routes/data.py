@@ -41,11 +41,20 @@ async def import_json(request: Request):
             return JSONResponse(status_code=400, content={"error": "Invalid backup format"})
 
         # POURQUOI: Only import known keys to prevent arbitrary file writes
-        allowed = {"profile": "profile.json", "meals": "meals.json", "weights": "weights.json",
-                    "daily_logs": "daily_logs.json", "grocery_lists": "grocery_lists.json", "plans": "plans.json"}
+        allowed = {"profile": ("profile.json", dict), "meals": ("meals.json", list),
+                    "weights": ("weights.json", list), "daily_logs": ("daily_logs.json", dict),
+                    "grocery_lists": ("grocery_lists.json", list), "plans": ("plans.json", list)}
+
+        # POURQUOI: Validate types before overwriting to prevent storage corruption
+        errors = []
+        for key, (filename, expected_type) in allowed.items():
+            if key in body and not isinstance(body[key], expected_type):
+                errors.append(f"{key} must be {expected_type.__name__}, got {type(body[key]).__name__}")
+        if errors:
+            return JSONResponse(status_code=400, content={"error": f"Invalid data types: {'; '.join(errors)}"})
 
         imported = []
-        for key, filename in allowed.items():
+        for key, (filename, _) in allowed.items():
             if key in body:
                 _write_json(filename, body[key])
                 imported.append(key)

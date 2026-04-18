@@ -103,14 +103,16 @@ async def log_exercise(data: ExerciseLogRequest):
 
 
 @router.delete("/log-exercise")
-async def clear_exercises(index: int = -1):
-    """Remove a specific exercise (by index) or all exercises for today."""
+async def clear_exercises(index: int = -1, clear_all: bool = False):
+    """Remove a specific exercise (by index) or all exercises for today (requires clear_all=true)."""
     today = date.today().isoformat()
     exercises = db.get_daily_log(today).get("exercises", [])
     if 0 <= index < len(exercises):
         exercises.pop(index)
-    else:
+    elif clear_all:
         exercises = []
+    else:
+        return JSONResponse(status_code=400, content={"error": "Specify index or clear_all=true"})
     _patch_daily_log(today, exercises=exercises)
     total_bonus = sum(e.get("bonus_days", 0) for e in exercises)
     return {"status": "ok", "today_total_bonus": round(total_bonus, 1), "exercises": exercises}

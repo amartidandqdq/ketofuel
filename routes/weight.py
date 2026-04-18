@@ -44,7 +44,7 @@ async def weight_insight():
         return JSONResponse(status_code=400, content={"error": str(e)})
     except Exception as e:
         log.exception("Weight insight failed")
-        return JSONResponse(status_code=500, content={"error": str(e)})
+        return JSONResponse(status_code=500, content={"error": "AI service error. Please try again."})
 
 
 @router.get("/deficit")

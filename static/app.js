@@ -1,6 +1,6 @@
 // KetoFuel — ES module entry point. Imports all modules and assigns to window for onclick handlers.
 
-import { state, storeData, getData, api, toast, toastUndo, setLoading, esc, truncate } from './modules/core.js';
+import { state, storeData, getData, api, toast, toastUndo, setLoading, esc, truncate, clearDataStore } from './modules/core.js';
 import { startFast, breakFast, startFastingTicker, updateFastingUI, loadFastingHistory } from './modules/fasting.js';
 import { loadDashboard, loadProteinStatus, renderMacroDonut } from './modules/dashboard.js';
 import { generatePlan, logFromPlanStore, toggleSection, setupTagInput, renderTags, removeTag, findRecipes,
@@ -52,9 +52,14 @@ Object.assign(window, {
 // --- Navigation ---
 function switchTab(tab) {
     document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-    document.querySelectorAll('.nav-link').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.nav-link').forEach(el => {
+        el.classList.remove('active');
+        el.setAttribute('aria-selected', 'false');
+    });
     document.getElementById(tab)?.classList.add('active');
-    document.querySelector(`[data-tab="${tab}"]`)?.classList.add('active');
+    const activeLink = document.querySelector(`[data-tab="${tab}"]`);
+    activeLink?.classList.add('active');
+    activeLink?.setAttribute('aria-selected', 'true');
 
     if (tab === 'today') loadDashboard();
     if (tab === 'meals') { loadFavorites(); loadSavedPlans(); }
@@ -99,6 +104,13 @@ document.addEventListener('DOMContentLoaded', () => {
             e.preventDefault();
             switchTab(link.dataset.tab);
         });
+    });
+
+    // POURQUOI: Close modals with Escape key for keyboard accessibility
+    document.addEventListener('keydown', e => {
+        if (e.key === 'Escape') {
+            document.querySelectorAll('.modal:not(.hidden)').forEach(m => m.classList.add('hidden'));
+        }
     });
 
     loadDashboard();

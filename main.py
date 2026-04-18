@@ -13,7 +13,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 
 from config import APP_HOST, APP_PORT, CORS_ORIGINS
 from logger import dlog
-from routes import profile, ai, meals, tracking, weight, ketosis, dashboard, openfoodfacts, data
+from routes import profile, ai, meals, tracking, weight, ketosis, dashboard, openfoodfacts, data, diagnose
 
 
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
@@ -51,6 +51,7 @@ app.include_router(ketosis.router)
 app.include_router(dashboard.router)
 app.include_router(openfoodfacts.router)
 app.include_router(data.router)
+app.include_router(diagnose.router)
 
 dlog.info("main", "[STARTUP] KetoFuel app initialized", {"host": APP_HOST, "port": APP_PORT})
 

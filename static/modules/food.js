@@ -12,11 +12,16 @@ export async function loadFoodDB() {
     } catch (e) { console.error('Food DB error:', e); }
 }
 
-export async function searchFoodDB() {
-    const q = document.getElementById('food-search').value;
-    const cat = document.getElementById('food-cat-filter').value;
-    try { const data = await api(`/foods?q=${encodeURIComponent(q)}&cat=${encodeURIComponent(cat)}`); renderFoodDB(data.foods); }
-    catch (e) { console.error('Food search error:', e); }
+// POURQUOI: Debounce prevents hammering API on every keystroke
+let _foodSearchTimer = null;
+export function searchFoodDB() {
+    clearTimeout(_foodSearchTimer);
+    _foodSearchTimer = setTimeout(async () => {
+        const q = document.getElementById('food-search').value;
+        const cat = document.getElementById('food-cat-filter').value;
+        try { const data = await api(`/foods?q=${encodeURIComponent(q)}&cat=${encodeURIComponent(cat)}`); renderFoodDB(data.foods); }
+        catch (e) { console.error('Food search error:', e); }
+    }, 250);
 }
 
 function renderFoodDB(foods) {
@@ -95,7 +100,7 @@ export function relogFavoriteStore(dataId) { relogFavorite(getData(dataId)); }
 
 async function relogFavorite(fav) {
     const entry = {
-        date: new Date().toISOString().split('T')[0], meal_name: fav.meal_name || 'Meal',
+        date: document.getElementById('meal-date')?.value || new Date().toISOString().split('T')[0], meal_name: fav.meal_name || 'Meal',
         meal_description: fav.meal_description || fav.meal_name || '',
         calories: fav.calories || null, protein_g: fav.protein_g || null,
         fat_g: fav.fat_g || null, carbs_g: fav.carbs_g || null, fiber_g: fav.fiber_g || null,

@@ -1,8 +1,9 @@
 // Dashboard — main load, mini weight chart, protein status, donut, weekly summary, meal timing
-import { api, esc, storeData, truncate } from './core.js';
+import { api, esc, storeData, truncate, clearDataStore } from './core.js';
 import { startFastingTicker } from './fasting.js';
 
 export async function loadDashboard() {
+    clearDataStore();
     try {
         const datePicker = document.getElementById('dash-date-picker');
         const today = new Date().toISOString().split('T')[0];
@@ -71,6 +72,7 @@ export async function loadDashboard() {
                         <span><span class="macro-dot fat"></span>${Math.round(m.fat_g || 0)}g F</span>
                         <span><span class="macro-dot carbs"></span>${Math.round(m.carbs_g || 0)}g C</span>
                     </div>
+                    <button class="btn-delete" onclick="deleteMeal('${m.id}')" title="Supprimer">&times;</button>
                 </div>
             `).join('');
         }
@@ -95,6 +97,7 @@ export async function loadDashboard() {
 
 function renderMiniWeightChart(weights) {
     const container = document.getElementById('dash-weight-chart');
+    if (!container) return;
     if (!weights.length) {
         container.innerHTML = '<p class="text-muted">No weight data yet</p>';
         return;

@@ -144,8 +144,9 @@ export async function removeExercise(index) {
 }
 
 export async function clearExercises() {
+    if (!confirm('Clear all exercises for today?')) return;
     try {
-        const result = await api('/log-exercise', { method: 'DELETE' });
+        const result = await api('/log-exercise?clear_all=true', { method: 'DELETE' });
         updateExerciseLog(result.exercises, result.today_total_bonus);
         renderExerciseGrid(result.exercises);
         window.loadKetosisTracker?.();

@@ -76,7 +76,10 @@
                             <div class="fasting-bar" id="fasting-bar"></div>
                         </div>
                         <div style="text-align:center;font-size:12px;color:var(--accent)" id="fast-elapsed">--</div>
-                        <div class="fasting-actions" style="margin-top:6px">
+                        <div style="margin-top:6px">
+                            <input type="time" id="fast-custom-time" style="font-size:11px;padding:2px 4px;background:var(--card);color:var(--text);border:1px solid var(--border);border-radius:4px;width:100%;margin-bottom:4px" placeholder="HH:MM" aria-label="Heure de début du jeûne (optionnel)">
+                        </div>
+                        <div class="fasting-actions" style="margin-top:4px">
                             <button class="btn btn-sm btn-secondary" onclick="startFast()" style="font-size:11px">Start</button>
                             <button class="btn btn-sm btn-primary" onclick="breakFast()" style="font-size:11px">Break</button>
                         </div>
@@ -282,7 +285,7 @@
                     </div>
                     <button class="btn btn-primary" id="btn-generate-plan" onclick="generatePlan()">Generate OMAD Plan</button>
                 </div>
-                <div id="plan-results"></div>
+                <div id="plan-result"></div>
                 <div class="card" style="margin-top:12px">
                     <h3 style="font-size:14px">Saved Plans</h3>
                     <div id="saved-plans"><p class="text-muted">No saved plans yet</p></div>
@@ -606,8 +609,8 @@
             <div class="card">
                 <h3>API</h3>
                 <div class="form-group">
-                    <label>OpenAI API Key <span id="api-key-status"></span></label>
-                    <input type="password" id="set-api-key" placeholder="sk-...">
+                    <label>Gemini API Key <span id="api-key-status"></span></label>
+                    <input type="password" id="set-api-key" placeholder="AIza...">
                 </div>
             </div>
 

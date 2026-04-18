@@ -27,19 +27,21 @@ export function showElectroForm() {
 }
 
 export async function saveElectrolytes() {
-    const today = new Date().toISOString().split('T')[0];
-    const log = await api('/daily-log?target_date=' + today);
-    log.sodium_mg = (log.sodium_mg || 0) + (parseInt(document.getElementById('log-sodium').value) || 0);
-    log.potassium_mg = (log.potassium_mg || 0) + (parseInt(document.getElementById('log-potassium').value) || 0);
-    log.magnesium_mg = (log.magnesium_mg || 0) + (parseInt(document.getElementById('log-magnesium').value) || 0);
-    log.date = today;
-    await api('/daily-log', { method: 'POST', body: JSON.stringify(log) });
-    document.getElementById('log-sodium').value = '';
-    document.getElementById('log-potassium').value = '';
-    document.getElementById('log-magnesium').value = '';
-    document.getElementById('electro-form').classList.add('hidden');
-    toast('Electrolytes logged!');
-    await loadDailyTrackers();
+    try {
+        const today = new Date().toISOString().split('T')[0];
+        const log = await api('/daily-log?target_date=' + today);
+        log.sodium_mg = (log.sodium_mg || 0) + (parseInt(document.getElementById('log-sodium').value) || 0);
+        log.potassium_mg = (log.potassium_mg || 0) + (parseInt(document.getElementById('log-potassium').value) || 0);
+        log.magnesium_mg = (log.magnesium_mg || 0) + (parseInt(document.getElementById('log-magnesium').value) || 0);
+        log.date = today;
+        await api('/daily-log', { method: 'POST', body: JSON.stringify(log) });
+        document.getElementById('log-sodium').value = '';
+        document.getElementById('log-potassium').value = '';
+        document.getElementById('log-magnesium').value = '';
+        document.getElementById('electro-form').classList.add('hidden');
+        toast('Electrolytes logged!');
+        await loadDailyTrackers();
+    } catch (e) { toast(e.message, 'error'); }
 }
 
 export async function loadDailyTrackers() {
